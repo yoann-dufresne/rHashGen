@@ -1,8 +1,9 @@
-#include "Operator.hpp"
 #include <sstream>
 #include <string>
 #include <vector>
+#include <memory>
 
+#include "Operator.hpp"
 
 #ifndef MASKING_HPP
 #define MASKING_HPP
@@ -25,9 +26,9 @@ public:
     ~Masking() {}
 
     // No reverse for masking
-    std::vector<Operator<myuint> > invert() const override
+    std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
-        std::vector<Operator<myuint> > inverted{};
+        std::vector<std::unique_ptr<Operator<myuint>>> inverted{};
         return inverted;
     }
 
@@ -35,7 +36,7 @@ public:
     std::string to_string() const override
     {
         std::stringstream ss;
-        ss << "val &= " << std::string(m_mask) << ";";
+        ss << "val &= " << std::to_string(m_mask) << ";";
         return ss.str();
     }
 

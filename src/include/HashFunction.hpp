@@ -1,4 +1,8 @@
 #include <vector>
+#include <memory>
+#include <sstream>
+#include <string>
+
 #include "Operator.hpp"
 #include "Masking.hpp"
 
@@ -10,21 +14,21 @@ class HashFunction
 {
 private:
     // A list of operations that constitute the hash function
-    std::vector<Operator<myuint> > m_operators;
+    std::vector<std::unique_ptr<Operator<myuint>>> m_operators;
 
     // The size (in bits) of the values to manipulate
     size_t m_value_size;
 
 public:
     HashFunction(size_t value_size) : m_value_size(value_size) {};
-    ~HashFunction();
+    ~HashFunction() = default;
 
     /** Add an operator to the hash function
      * @param op The operator to add
      */
-    void add_operator(Operator<myuint> const & op)
+    void add_operator(std::unique_ptr<Operator<myuint>> op)
     {
-        m_operators.push_back(op);
+        m_operators.push_back(std::move(op));
     }
 
 
@@ -33,40 +37,40 @@ public:
      */
     void complete_with_masks()
     {
-        std::vector<Operator<myuint> > new_operations;
+        std::vector<std::unique_ptr<Operator<myuint>>> new_operations;
         // We add a masking operators when it is needed
         bool ongoing_overflow{false};
-        for (auto const & op : m_operators)
+        for (std::unique_ptr<Operator<myuint>> & op_ptr : m_operators)
         {
-            // Remove operator of type Masking
-            if (dynamic_cast<Masking<myuint> const *>(&op) != nullptr)
-            {
+            // Skip the loop is the operator is a masking operator
+            if (auto const* masking_ptr = dynamic_cast<const Masking<myuint>*>(op_ptr.get())) {
+                // op_ptr est de type std::unique_ptr<Masking<myuint>>
                 continue;
             }
 
             // If we have an ongoing overflow and the operator needs to clean the left bits, we add a masking operator
-            if (ongoing_overflow and op.clean_leftbits_needed())
+            if (ongoing_overflow and op_ptr->clean_leftbits_needed())
             {
-                new_operations.push_back(Masking<myuint>(m_value_size - m_operators.size()));
+                new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
             }
 
             // We add the operator
-            new_operations.push_back(op);
+            new_operations.push_back(std::move(op_ptr));
 
             // If the operator is overflowing, we set the ongoing_overflow flag
-            if (op.left_overflowing())
+            if (op_ptr->left_overflowing())
             {
                 ongoing_overflow = true;
             }
         }
 
         // If we have an ongoing overflow at the end, we add a masking operator
-        if (m_operators.size() > 0 and m_operators.back().clean_leftbits_needed())
+        if (m_operators.size() > 0 and m_operators.back()->clean_leftbits_needed())
         {
-            new_operations.push_back(Masking<myuint>(m_value_size - m_operators.size()));
+            new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
         }
 
-        m_operators = new_operations;
+        m_operators = std::move(new_operations);
     }
 
     /** Get the string representation of the hash function
@@ -81,7 +85,7 @@ public:
 
         for (auto const & op : m_operators)
         {
-            ss << op.to_string() << "\n";
+            ss << op->to_string() << "\n";
         }
 
         ss << "return val;\n";

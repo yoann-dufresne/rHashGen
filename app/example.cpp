@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdint>
+#include <memory>
 
 #include "HashFunction.hpp"
 #include "Operator.hpp"
@@ -12,12 +13,13 @@ int main()
 {
     // The size of the values to manipulate is 57 bits.
     size_t value_size{57};
+    using myuint = uint64_t;
 
     // Create an instance of HashFunction with a value size of 64 bits
-    HashFunction<uint64_t> hashFunc(value_size);
+    HashFunction<myuint> hashFunc(value_size);
 
     // Add shift operators
-    hashFunc.add_operator(XorLeftShift<uint64_t>(5, value_size));
+    hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(5, value_size));
     // hashFunc.add_operator(XorRightShift(3));
 
     // Complete with masks if necessary

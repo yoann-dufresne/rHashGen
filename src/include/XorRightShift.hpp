@@ -25,15 +25,15 @@ public:
     ~XorRightShift() {}
 
     // Implement the invert function
-    std::vector<Operator<myuint> > invert() const override
+    std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
-        std::vector<Operator<myuint> > inverted;
+        std::vector<std::unique_ptr<Operator<myuint>>> inverted;
         
         // We start from the number of shifts and we double it until we reach the size of the myuint type
         // Doing so, we will be able to recover the original value in logaritmic time
         for (size_t recover_size{m_shifts}; recover_size < m_val_size; recover_size *= 2)
         {
-            inverted.push_back(XorRightShift(recover_size, m_val_size));
+            inverted.push_back(std::make_unique<XorRightShift<myuint>>(recover_size, m_val_size));
         }
 
         return inverted;
