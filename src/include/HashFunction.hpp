@@ -54,18 +54,18 @@ public:
                 new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
             }
 
-            // We add the operator
-            new_operations.push_back(std::move(op_ptr));
-
             // If the operator is overflowing, we set the ongoing_overflow flag
             if (op_ptr->left_overflowing())
             {
                 ongoing_overflow = true;
             }
+
+            // We add the operator
+            new_operations.push_back(std::move(op_ptr));
         }
 
         // If we have an ongoing overflow at the end, we add a masking operator
-        if (m_operators.size() > 0 and m_operators.back()->clean_leftbits_needed())
+        if (new_operations.size() > 0 and new_operations.back()->clean_leftbits_needed())
         {
             new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
         }
