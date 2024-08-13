@@ -19,8 +19,9 @@ int main()
     HashFunction<myuint> hashFunc(value_size);
 
     // Add shift operators
+    hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(17, value_size));
     hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(5, value_size));
-    // hashFunc.add_operator(XorRightShift(3));
+    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(3, value_size));
 
     // Complete with masks if necessary
     hashFunc.complete_with_masks();
