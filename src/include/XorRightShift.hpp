@@ -16,24 +16,24 @@ class XorRightShift : public Operator<myuint>
 private:
     // The number of shifts to apply
     size_t m_shifts;
-    // The size of the variable to manipulate
-    size_t m_val_size;
+    // The size (in bits) of the values to manipulate
+    size_t m_value_size;
 
 public:
-    XorRightShift(size_t shifts, size_t val_size) : m_shifts(shifts), m_val_size(val_size) {}
-    XorRightShift(XorRightShift const & other) : XorRightShift(other.shifts) {}
+    XorRightShift(size_t shifts, size_t value_size) : m_shifts(shifts), m_value_size(value_size) {}
+    XorRightShift(XorRightShift const & other) : XorRightShift(other.shifts, other.m_value_size) {}
     ~XorRightShift() {}
 
     // Implement the invert function
     std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
-        std::vector<std::unique_ptr<Operator<myuint>>> inverted;
-        
+        std::vector<std::unique_ptr<Operator<myuint>>> inverted{};
+
         // We start from the number of shifts and we double it until we reach the size of the myuint type
         // Doing so, we will be able to recover the original value in logaritmic time
-        for (size_t recover_size{m_shifts}; recover_size < m_val_size; recover_size *= 2)
+        for (size_t recover_size{m_shifts}; recover_size < m_value_size; recover_size *= 2)
         {
-            inverted.push_back(std::make_unique<XorRightShift<myuint>>(recover_size, m_val_size));
+            inverted.push_back(std::make_unique<XorRightShift<myuint>>(recover_size, m_value_size));
         }
 
         return inverted;
@@ -47,7 +47,7 @@ public:
         return ss.str();
     }
 
-    myuint apply (myuint value) const override
+    myuint apply(myuint value) const override
     {
         return value ^ (value >> m_shifts);
     }
@@ -56,7 +56,7 @@ public:
     {
         return false;
     }
-    
+
     bool clean_leftbits_needed() const override
     {
         return true;
