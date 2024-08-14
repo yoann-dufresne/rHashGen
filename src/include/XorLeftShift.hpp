@@ -4,7 +4,6 @@
 
 #include "Operator.hpp"
 
-
 #ifndef XORLEFTSHIFT_HPP
 #define XORLEFTSHIFT_HPP
 
@@ -29,7 +28,7 @@ public:
     std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
         std::vector<std::unique_ptr<Operator<myuint>>> inverted{};
-        
+
         // We start from the number of shifts and we double it until we reach the size of the myuint type
         // Doing so, we will be able to recover the original value in logaritmic time
         for (size_t recover_size{m_shifts}; recover_size < m_value_size; recover_size *= 2)
@@ -57,7 +56,7 @@ public:
     {
         return true;
     }
-    
+
     bool clean_leftbits_needed() const override
     {
         return false;

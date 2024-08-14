@@ -43,7 +43,7 @@ public:
         bool ongoing_overflow{false};
         for (std::unique_ptr<Operator<myuint>> & op_ptr : m_operators)
         {
-            // Skip the loop is the operator is a masking operator
+            // Skip the loop if the operator is a masking operator
             if (auto const* masking_ptr = dynamic_cast<const Masking<myuint>*>(op_ptr.get())) {
                 // op_ptr est de type std::unique_ptr<Masking<myuint>>
                 continue;
@@ -52,7 +52,7 @@ public:
             // If we have an ongoing overflow and the operator needs to clean the left bits, we add a masking operator
             if (ongoing_overflow and op_ptr->clean_leftbits_needed())
             {
-                new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
+                new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size));
             }
 
             // If the operator is overflowing, we set the ongoing_overflow flag
@@ -66,9 +66,9 @@ public:
         }
 
         // If we have an ongoing overflow at the end, we add a masking operator
-        if (new_operations.size() > 0 and new_operations.back()->clean_leftbits_needed())
+        if (new_operations.size() > 0 and ongoing_overflow)
         {
-            new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size - m_operators.size()));
+            new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size));
         }
 
         m_operators = std::move(new_operations);

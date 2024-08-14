@@ -49,7 +49,7 @@ public:
     {
         return false;
     }
-    
+
     bool clean_leftbits_needed() const override
     {
         return false;
