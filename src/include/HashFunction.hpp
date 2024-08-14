@@ -21,6 +21,7 @@ private:
 
 public:
     HashFunction(size_t value_size) : m_value_size(value_size) {};
+    HashFunction(HashFunction & other) : m_operators{std::move(other.m_operators)}, m_value_size(other.m_value_size) {};
     ~HashFunction() = default;
 
     /** Add an operator to the hash function
@@ -73,6 +74,36 @@ public:
         m_operators = std::move(new_operations);
     }
 
+    /**
+     * Inverts the hash function by reversing the order of operators and applying their inverses.
+     * 
+     * @return The inverted hash function.
+     */
+    HashFunction<myuint> invert() const
+    {
+        // Create a new HashFunction object with the same value size as the current hash function
+        HashFunction<myuint> inverted{m_value_size};
+
+        // Iterate over each operator in the current hash function
+        for (size_t i = m_operators.size(); i > 0; --i)
+        {
+            // Get the inverse operators for the current operator
+            auto inverse_operators = m_operators[i - 1]->invert();
+
+            // Add the inverse operators to the inverted hash function
+            for (auto & inv_op : inverse_operators)
+            {
+                inverted.add_operator(std::move(inv_op));
+            }
+        }
+
+        // Complete the inverted hash function with masking operators
+        inverted.complete_with_masks();
+        
+        // Return the inverted hash function
+        return inverted;
+    }
+
     /** Get the string representation of the hash function
      * @return The string representation of the hash function
      */
@@ -85,10 +116,10 @@ public:
 
         for (auto const & op : m_operators)
         {
-            ss << op->to_string() << "\n";
+            ss << "  " << op->to_string() << "\n";
         }
 
-        ss << "return val;\n";
+        ss << "  return val;\n";
         ss << "}\n";
 
         return ss.str();

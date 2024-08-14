@@ -29,5 +29,12 @@ int main()
     // Print the string representation of the hash function
     std::cout << hashFunc.to_string() << std::endl;
 
+    // Get the inverse function
+    HashFunction<myuint> revHashFunc{hashFunc.invert()};
+    
+    // Print the string representation of the inverted hash function
+    std::cout << "Inverted function:" << std::endl;
+    std::cout << revHashFunc.to_string() << std::endl;
+
     return 0;
 }
