@@ -42,7 +42,7 @@ public:
         bool ongoing_overflow{false};
         for (std::unique_ptr<Operator<myuint>> & op_ptr : m_operators)
         {
-            // Skip the loop is the operator is a masking operator
+            // Skip the loop if the operator is a masking operator
             if (auto const* masking_ptr = dynamic_cast<const Masking<myuint>*>(op_ptr.get())) {
                 // op_ptr est de type std::unique_ptr<Masking<myuint>>
                 continue;
