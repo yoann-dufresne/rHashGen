@@ -22,6 +22,12 @@ make rHashGen-tests
 
 To run the example and test binaries, use the following commands:
 
-- Example binary: `./example`
-- Test binary: `make test`
+```bash
+# Run the example binary
+./example
+
+# Run the test binary
+make test
+```
+
 
