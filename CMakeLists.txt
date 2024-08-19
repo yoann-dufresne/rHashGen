@@ -13,6 +13,10 @@ include_directories(${PROJECT_SOURCE_DIR}/src/include)
 # Add subdirectories
 add_subdirectory(src)
 
+# Google Test
+add_subdirectory(external/googletest)
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
 # Find all main files in the app directory
 file(GLOB APP_SOURCES ${PROJECT_SOURCE_DIR}/app/*.cpp)
 
@@ -27,3 +31,7 @@ foreach(APP_SOURCE ${APP_SOURCES})
     # Link the necessary libraries
     target_link_libraries(${APP_NAME} PRIVATE rHashGenLib)
 endforeach()
+
+# Add the test directory
+enable_testing()
+add_subdirectory(test)
