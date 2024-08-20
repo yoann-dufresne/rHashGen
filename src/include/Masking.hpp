@@ -36,7 +36,7 @@ public:
     std::string to_string() const override
     {
         std::stringstream ss;
-        ss << "val &= " << std::to_string(m_mask) << ";";
+        ss << "val &= 0x" << std::hex << m_mask << std::dec << ";";
         return ss.str();
     }
 

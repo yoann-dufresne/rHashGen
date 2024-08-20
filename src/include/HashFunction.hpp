@@ -53,6 +53,7 @@ public:
             if (ongoing_overflow and op_ptr->clean_leftbits_needed())
             {
                 new_operations.push_back(std::make_unique<Masking<myuint>>(m_value_size));
+                ongoing_overflow = false;
             }
 
             // If the operator is overflowing, we set the ongoing_overflow flag

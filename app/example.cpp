@@ -15,8 +15,8 @@
 int main()
 {
     // The size of the values to manipulate is 57 bits.
-    size_t value_size{32};
-    using myuint = uint64_t;
+    size_t value_size{31};
+    using myuint = uint32_t;
 
     // Create an instance of HashFunction with a value size of 64 bits
     HashFunction<myuint> hashFunc(value_size);
