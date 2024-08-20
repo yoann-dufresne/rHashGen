@@ -2,6 +2,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <algorithm>
 
 #include "Operator.hpp"
 
@@ -18,10 +20,14 @@ private:
     size_t m_val_size;
 
 public:
-    Multiply(myuint multiplier, size_t val_size) : m_multiplier(multiplier), m_val_size(val_size) {
+    Multiply(myuint multiplier, size_t val_size, bool trusted_values=false) : m_multiplier(multiplier), m_val_size(val_size) {
+        // Skip verification of calculability of the inverse if the values are trusted
+        if (trusted_values)
+            return;
+
         // Compute the pgcd between the multiplier and pow(2, val_size) to make sure that the multiplier is invertible
         myuint a = m_multiplier;
-        myuint b = 1 << (m_val_size - 1);
+        myuint b = 1 << m_val_size;
         myuint r;
         while (b != 0)
         {
@@ -40,30 +46,31 @@ public:
 
     myuint get_invert_multiplier() const
     {
+        if (m_val_size >= sizeof(myuint) * 8)
+            throw std::runtime_error("Integer size is too small. Multiplication inverse impossible. 1 more bit is needed.");
         // Compute the inverse of the multiplier by using the extended euclidean algorithm (cf https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
-        myuint a = m_multiplier;
-        myuint b = 1 << (m_val_size - 1);
-        myuint r;
-        myuint u = 1;
-        myuint v = 0;
-        myuint u1 = 0;
-        myuint v1 = 1;
-        myuint q;
-        myuint t;
-        while (b != 0)
-        {
-            q = a / b;
-            r = a % b;
-            a = b;
-            b = r;
-            t = u;
-            u = u1;
-            u1 = t - q * u1;
-            t = v;
-            v = v1;
-            v1 = t - q * v1;
+        // The algorithm is modified for unsigned integers. Explanation at https://stackoverflow.com/questions/67097428
+
+        myuint r0 = m_multiplier;
+        myuint r1 = 1 << m_val_size;
+        myuint s0 = 1;
+        myuint s1 = 0;
+        myuint t0 = 0;
+        myuint t1 = 1;
+        size_t n = 0;
+
+        while (r1) {
+            myuint q = r0 / r1;
+            r0 = r0>q*r1?r0-q*r1:q*r1-r0; std::swap(r0,r1);
+            s0 = s0+q*s1; std::swap(s0,s1);
+            t0 = t0+q*t1; std::swap(t0,t1);
+            ++n;
         }
-        return u % (1 << (m_val_size - 1));
+        // gcd = r0
+        if (n%2) s0=(1 << m_val_size)-s0;
+        else     t0=m_multiplier-t0;
+
+        return s0;
     }
 
     // Implement the invert function
