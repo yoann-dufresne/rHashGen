@@ -13,6 +13,9 @@ template <typename myuint>
 class HashFunction
 {
 private:
+    // Function name
+    std::string m_function_name;
+
     // A list of operations that constitute the hash function
     std::vector<std::unique_ptr<Operator<myuint>>> m_operators;
 
@@ -20,8 +23,8 @@ private:
     size_t m_value_size;
 
 public:
-    HashFunction(size_t value_size) : m_value_size(value_size) {};
-    HashFunction(HashFunction & other) : m_operators{std::move(other.m_operators)}, m_value_size(other.m_value_size) {};
+    HashFunction(std::string const & function_name, size_t value_size) : m_function_name(function_name), m_value_size(value_size) {};
+    HashFunction(HashFunction & other) : m_function_name(other.m_function_name), m_operators{std::move(other.m_operators)}, m_value_size(other.m_value_size) {};
     ~HashFunction() = default;
 
     /** Add an operator to the hash function
@@ -83,7 +86,7 @@ public:
     HashFunction<myuint> invert() const
     {
         // Create a new HashFunction object with the same value size as the current hash function
-        HashFunction<myuint> inverted{m_value_size};
+        HashFunction<myuint> inverted{std::string("inverted_") + m_function_name, m_value_size};
 
         // Iterate over each operator in the current hash function
         for (size_t i = m_operators.size(); i > 0; --i)
@@ -112,7 +115,7 @@ public:
     {
         std::stringstream ss;
         ss << "template <typename myuint>\n";
-        ss << "myuint hash(myuint val)\n";
+        ss << "myuint " << m_function_name << "(myuint val)\n";
         ss << "{\n";
 
         for (auto const & op : m_operators)

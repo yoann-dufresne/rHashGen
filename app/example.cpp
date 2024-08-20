@@ -19,7 +19,7 @@ int main()
     using myuint = uint32_t;
 
     // Create an instance of HashFunction with a value size of 64 bits
-    HashFunction<myuint> hashFunc(value_size);
+    HashFunction<myuint> hashFunc("hash", value_size);
 
     // Add shift operators
     hashFunc.add_operator(std::make_unique<Multiply<myuint>>(9, value_size));
