@@ -42,5 +42,14 @@ int main()
     std::cout << "Inverted function:" << std::endl;
     std::cout << revHashFunc.to_string() << std::endl;
 
+    // Apply the hash function to a value
+    myuint value {0xDADBEEF};
+    myuint hashed {hashFunc.apply(value)};
+    std::cout << hashFunc.get_name() << "(0x" << std::hex << value << ") = 0x" << hashed << std::endl;
+    
+    // Apply the inverse function to the hashed value
+    myuint recovered {revHashFunc.apply(hashed)};
+    std::cout << revHashFunc.get_name() << "(0x" << std::hex << hashed << ") = 0x" << recovered << std::dec << std::endl;
+
     return 0;
 }

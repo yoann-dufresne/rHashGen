@@ -27,12 +27,34 @@ public:
     HashFunction(HashFunction & other) : m_function_name(other.m_function_name), m_operators{std::move(other.m_operators)}, m_value_size(other.m_value_size) {};
     ~HashFunction() = default;
 
+    /** Get the name of the hash function
+     * @return The name of the hash function
+     */
+    std::string get_name() const
+    {
+        return m_function_name;
+    }
+
     /** Add an operator to the hash function
      * @param op The operator to add
      */
     void add_operator(std::unique_ptr<Operator<myuint>> op)
     {
         m_operators.push_back(std::move(op));
+    }
+
+    /** Apply the hash function to a value
+     * @param value The value to hash
+     * @return The hashed value
+     */
+    myuint apply (myuint value) const
+    {
+        for (auto const & op : m_operators)
+        {
+            value = op->apply(value);
+        }
+
+        return value;
     }
 
 
