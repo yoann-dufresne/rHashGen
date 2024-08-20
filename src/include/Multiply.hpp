@@ -41,7 +41,7 @@ public:
         }
     }
 
-    Multiply(Multiply const & other) : Multiply(other.m_multiplier, other.m_val_size) {}
+    Multiply(Multiply const & other) : Multiply(other.m_multiplier, other.m_val_size, true) {}
     ~Multiply() {}
 
     myuint get_invert_multiplier() const

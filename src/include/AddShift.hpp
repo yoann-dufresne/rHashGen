@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Operator.hpp"
+#include "Multiply.hpp"
 
 #ifndef ADDSHIFT_HPP
 #define ADDSHIFT_HPP
@@ -28,7 +29,10 @@ public:
     {
         std::vector<std::unique_ptr<Operator<myuint>>> inverted;
         
-        throw std::runtime_error("Not implemented yet");
+        Multiply<myuint> const mlt(1 + (1 << m_shifts), m_val_size, true);
+        std::vector<std::unique_ptr<Operator<myuint>>> invert = mlt.invert();
+        Multiply<myuint> const *invert_ptr = dynamic_cast<Multiply<myuint> const *>(invert[0].get());
+        inverted.push_back(std::make_unique<Multiply<myuint>>(*invert_ptr));
 
         return inverted;
     }
