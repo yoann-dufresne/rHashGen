@@ -5,6 +5,7 @@
 
 #include "Operator.hpp"
 #include "Masking.hpp"
+#include "log.h"
 
 #ifndef HASHFUNCTION_HPP
 #define HASHFUNCTION_HPP
@@ -17,7 +18,7 @@ private:
     std::string m_function_name;
 
     // A list of operations that constitute the hash function
-    std::vector<std::unique_ptr<Operator<myuint>>> m_operators;
+    std::vector<std::shared_ptr<Operator<myuint>>> m_operators;
 
     // The size (in bits) of the values to manipulate
     size_t m_value_size;
@@ -38,7 +39,7 @@ public:
     /** Add an operator to the hash function
      * @param op The operator to add
      */
-    void add_operator(std::unique_ptr<Operator<myuint>> op)
+    void add_operator(std::shared_ptr<Operator<myuint>>&& op)
     {
         m_operators.push_back(std::move(op));
     }
@@ -47,7 +48,7 @@ public:
      * @param value The value to hash
      * @return The hashed value
      */
-    myuint apply (myuint value) const
+    myuint apply(myuint value) const
     {
         for (auto const & op : m_operators)
         {
@@ -57,20 +58,21 @@ public:
         return value;
     }
 
-
     /** Fill the vector of operations with the necessary masking operators to complete the hash function
      * The previous list of operations is replaced by a new one.
      */
     void complete_with_masks()
     {
-        std::vector<std::unique_ptr<Operator<myuint>>> new_operations;
+        std::vector<std::shared_ptr<Operator<myuint>>> new_operations;
         // We add a masking operators when it is needed
         bool ongoing_overflow{false};
-        for (std::unique_ptr<Operator<myuint>> & op_ptr : m_operators)
+        for (std::shared_ptr<Operator<myuint>> & op_ptr : m_operators)
         {
+            ASSERT(op_ptr != nullptr);
+
             // Skip the loop if the operator is a masking operator
             if (auto const* masking_ptr = dynamic_cast<const Masking<myuint>*>(op_ptr.get())) {
-                // op_ptr est de type std::unique_ptr<Masking<myuint>>
+                // op_ptr est de type std::shared_ptr<Masking<myuint>>
                 continue;
             }
 
@@ -102,7 +104,7 @@ public:
 
     /**
      * Inverts the hash function by reversing the order of operators and applying their inverses.
-     * 
+     *
      * @return The inverted hash function.
      */
     HashFunction<myuint> invert() const
@@ -125,7 +127,7 @@ public:
 
         // Complete the inverted hash function with masking operators
         inverted.complete_with_masks();
-        
+
         // Return the inverted hash function
         return inverted;
     }
@@ -150,6 +152,11 @@ public:
 
         return ss.str();
     }
+
+    size_t size() const {
+        return m_operators.size();
+    }
+
 };
 
 #endif // HASHFUNCTION_HPP
