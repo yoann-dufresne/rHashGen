@@ -21,7 +21,7 @@ private:
 
 public:
     XorRightShift(size_t shifts, size_t value_size) : m_shifts(shifts), m_value_size(value_size) {}
-    XorRightShift(XorRightShift const & other) : XorRightShift(other.shifts, other.m_value_size) {}
+    XorRightShift(XorRightShift const & other) : XorRightShift(other.m_shifts, other.m_value_size) {}
     ~XorRightShift() {}
 
     // Implement the invert function
