@@ -51,7 +51,7 @@ else()
     include_directories($ENV{PARADISEO_ROOT}/include/paradiseo/mo)
     link_directories($ENV{PARADISEO_ROOT}/lib64)
 endif()
-set(PARADISEO_LIBRARIES ga eoutils eo)
+set(PARADISEO_LIBRARIES eoutils eo)
 
 # Single-header dependencies.
 include_directories(external/clutchlog)
@@ -83,7 +83,7 @@ foreach(APP_SOURCE ${APP_SOURCES})
     add_executable(${APP_NAME} ${APP_SOURCE})
 
     # Link the necessary libraries
-    target_link_libraries(${APP_NAME} PRIVATE rHashGenLib)
+    target_link_libraries(${APP_NAME} PRIVATE rHashGenLib ${PARADISEO_LIBRARIES})
 endforeach()
 
 # Add the test directory

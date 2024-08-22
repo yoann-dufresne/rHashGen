@@ -1,8 +1,7 @@
-#pragma once
+#ifndef LOG_H
+#define LOG_H
 
 #include <clutchlog/clutchlog.h>
-
-namespace frictionless {
 
 // Make asserts (de)clutchable.
 #define ASSERT(EXPR) { CLUTCHFUNC(critical, assert, EXPR); }
@@ -11,6 +10,6 @@ namespace frictionless {
  *
  * Mainly colors and line template.
  */
-//void clutchlog_config();
+void clutchlog_config();
 
-} // frictionless
+#endif // LOG_H
