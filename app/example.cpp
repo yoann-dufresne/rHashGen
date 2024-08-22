@@ -11,6 +11,7 @@
 #include "Masking.hpp"
 #include "Multiply.hpp"
 #include "moCombination.hpp"
+#include "moCombinationNeighbor.hpp"
 
 
 int main()
@@ -53,7 +54,10 @@ int main()
     myuint recovered {revHashFunc.apply(hashed)};
     std::cout << revHashFunc.get_name() << "(0x" << std::hex << hashed << ") = 0x" << recovered << std::dec << std::endl;
 
-    moCombination<myfit>({0,1,2,3,4,5}, 6);
+    moCombination<myfit> sol({0,1,2,3,4,5}, 6);
+    moCombinationNeighbor<moCombination<myfit>> neighb;
+    neighb.set(0,1);
+    neighb.move(sol);
 
     return 0;
 }
