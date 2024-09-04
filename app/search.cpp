@@ -18,13 +18,44 @@
 #include "EvalFunc.hpp"
 #include "log.h"
 
+using myuint = uint32_t;
+using Min = eoMinimizingFitness;
+using Combi = moCombination<Min>;
+using Nb = moCombinationNeighbor<Combi>;
+using NbHood = moCombinationNeighborhood<Combi>;
+
+
+size_t make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t value_size)
+{
+    std::vector<size_t> sizes(value_size);
+    std::iota(std::begin(sizes), std::end(sizes), 1); // 1, 2, 3, …, until value_size.
+
+    for(auto size : sizes) { // TODO what shift/mask sizes do we want?
+        forge.add< XorLeftShift <myuint> >(size, value_size);
+        CLUTCHLOG(xdebug, "XorLeftShift << " << size);
+
+        forge.add< XorRightShift<myuint> >(size, value_size);
+        CLUTCHLOG(xdebug, "XorRightShift << " << size);
+
+        forge.add< AddShift     <myuint> >(size, value_size);
+        CLUTCHLOG(xdebug, "AddShift << " << size);
+
+        forge.add< Masking      <myuint> >(size);
+        CLUTCHLOG(xdebug, "Masking & " << size);
+    }
+
+    for(auto size : sizes) { // TODO what multipliers do we want?
+        if(size % 2 == 1) { // Only odd multipliers are allowed.
+            forge.add< Multiply      <myuint> >(size, value_size);
+            CLUTCHLOG(xdebug, "Multiply * " << size);
+        }
+    }
+
+    return sizes.size();
+}
+
 int main()
 {
-    using myuint = uint32_t;
-    using Min = eoMinimizingFitness;
-    using Combi = moCombination<Min>;
-    using Nb = moCombinationNeighbor<Combi>;
-    using NbHood = moCombinationNeighborhood<Combi>;
 
     CLUTCHLOG(progress, "Set config");
     clutchlog_config(); // common config
@@ -35,13 +66,11 @@ int main()
     const size_t value_size = 31;
     size_t seed = 0;
 
+    CLUTCHLOG(progress, "Create the search domain...");
     eoForgeVector< EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
-        forge.add< Multiply     <myuint> >( 9, value_size);
-        forge.add< XorLeftShift <myuint> >(17, value_size);
-        forge.add< XorLeftShift <myuint> >( 5, value_size);
-        forge.add< AddShift     <myuint> >(19, value_size);
-        forge.add< XorRightShift<myuint> >( 3, value_size);
-        forge.add< Multiply     <myuint> >( 9, value_size);
+    size_t nb_ops = make_domain(forge, value_size);
+    CLUTCHLOG(info, forge.size() << " operators");
+    CLUTCHLOG(note, "OK");
 
     CLUTCHLOG(progress, "Pick a random solution...");
     std::vector<size_t> v;
