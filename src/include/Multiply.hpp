@@ -17,17 +17,17 @@ private:
     // Mutliplier constant
     myuint m_multiplier;
     // The size of the variable to manipulate
-    size_t m_val_size;
+    size_t m_value_size;
 
 public:
-    Multiply(myuint multiplier, size_t val_size, bool trusted_values=false) : m_multiplier(multiplier), m_val_size(val_size) {
+    Multiply(myuint multiplier, size_t value_size, bool trusted_values=false) : m_multiplier(multiplier), m_value_size(value_size) {
         // Skip verification of calculability of the inverse if the values are trusted
         if (trusted_values)
             return;
 
-        // Compute the pgcd between the multiplier and pow(2, val_size) to make sure that the multiplier is invertible
+        // Compute the pgcd between the multiplier and pow(2, value_size) to make sure that the multiplier is invertible
         myuint a = m_multiplier;
-        myuint b = 1 << m_val_size;
+        myuint b = 1 << m_value_size;
         myuint r;
         while (b != 0)
         {
@@ -41,18 +41,18 @@ public:
         }
     }
 
-    Multiply(Multiply const & other) : Multiply(other.m_multiplier, other.m_val_size, true) {}
+    Multiply(Multiply const & other) : Multiply(other.m_multiplier, other.m_value_size, true) {}
     ~Multiply() {}
 
     myuint get_invert_multiplier() const
     {
-        if (m_val_size >= sizeof(myuint) * 8)
+        if (m_value_size >= sizeof(myuint) * 8)
             throw std::runtime_error("Integer size is too small. Multiplication inverse impossible. 1 more bit is needed.");
         // Compute the inverse of the multiplier by using the extended euclidean algorithm (cf https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
         // The algorithm is modified for unsigned integers. Explanation at https://stackoverflow.com/questions/67097428
 
         myuint r0 = m_multiplier;
-        myuint r1 = 1 << m_val_size;
+        myuint r1 = 1 << m_value_size;
         myuint s0 = 1;
         myuint s1 = 0;
         myuint t0 = 0;
@@ -67,7 +67,7 @@ public:
             ++n;
         }
         // gcd = r0
-        if (n%2) s0=(1 << m_val_size)-s0;
+        if (n%2) s0=(1 << m_value_size)-s0;
         else     t0=m_multiplier-t0;
 
         return s0;
@@ -77,11 +77,11 @@ public:
     std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
         std::vector<std::unique_ptr<Operator<myuint>>> inverted;
-        
+
         // Compute the inverse of the multiplier
         myuint inv_multiplier = get_invert_multiplier();
         // Register the inverse operator
-        inverted.push_back(std::make_unique<Multiply<myuint>>(inv_multiplier, m_val_size));
+        inverted.push_back(std::make_unique<Multiply<myuint>>(inv_multiplier, m_value_size));
 
         return inverted;
     }
