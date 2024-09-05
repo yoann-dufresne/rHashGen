@@ -28,7 +28,7 @@ public:
     std::vector<std::unique_ptr<Operator<myuint>>> invert() const override
     {
         std::vector<std::unique_ptr<Operator<myuint>>> inverted;
-        
+
         Multiply<myuint> const mlt(1 + (1 << m_shifts), m_val_size, true);
         std::vector<std::unique_ptr<Operator<myuint>>> invert = mlt.invert();
         Multiply<myuint> const *invert_ptr = dynamic_cast<Multiply<myuint> const *>(invert[0].get());
@@ -40,9 +40,16 @@ public:
     // Implement the to_string function
     std::string to_string() const override
     {
-        std::stringstream ss;
-        ss << "val += val << " << m_shifts << ";";
-        return ss.str();
+        std::ostringstream os;
+        os << "val += val << " << m_shifts << ";";
+        return os.str();
+    }
+
+    std::string to_short() const override
+    {
+        std::ostringstream os;
+        os << "a" << m_shifts;
+        return os.str();
     }
 
     myuint apply (myuint value) const override
@@ -54,7 +61,7 @@ public:
     {
         return true;
     }
-    
+
     bool clean_leftbits_needed() const override
     {
         return false;

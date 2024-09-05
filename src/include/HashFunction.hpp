@@ -24,8 +24,11 @@ private:
     size_t m_value_size;
 
 public:
-    HashFunction(std::string const & function_name, size_t value_size) : m_function_name(function_name), m_value_size(value_size) {};
-    HashFunction(HashFunction & other) : m_function_name(other.m_function_name), m_operators{std::move(other.m_operators)}, m_value_size(other.m_value_size) {};
+    HashFunction(size_t value_size, std::string const & function_name = "") :
+        m_function_name(function_name),
+        m_value_size(value_size)
+    {};
+
     ~HashFunction() = default;
 
     /** Get the name of the hash function
@@ -33,7 +36,24 @@ public:
      */
     std::string get_name() const
     {
-        return m_function_name;
+        if(m_function_name.size() == 0) {
+            // Symbols from unicode codepages allowed in identifiers: 𓃊ㄍ𓉘𓉝𐙤
+            // Allows to copy-paste the name as a legit C++ function name
+            // while still being readable.
+            const std::string sep = "𐙤";
+            std::ostringstream os;
+            os << "hash𓐅" << m_operators.size() << "𓉘";
+            if(m_operators.size() > 0) {
+                os << m_operators[0]->to_short();
+                for(size_t i=1; i<m_operators.size(); ++i) {
+                    os << sep << m_operators[i]->to_short();
+                }
+            }
+            os << "𓉝";
+            return os.str();
+        } else {
+            return m_function_name;
+        }
     }
 
     /** Add an operator to the hash function
@@ -105,12 +125,14 @@ public:
     /**
      * Inverts the hash function by reversing the order of operators and applying their inverses.
      *
+     * @note This keeps the name of the forward hash function, prefixed by "inverted_".
+     *
      * @return The inverted hash function.
      */
     HashFunction<myuint> invert() const
     {
         // Create a new HashFunction object with the same value size as the current hash function
-        HashFunction<myuint> inverted{std::string("inverted_") + m_function_name, m_value_size};
+        HashFunction<myuint> inverted{m_value_size, std::string("inverted_") + this->get_name()};
 
         // Iterate over each operator in the current hash function
         for (size_t i = m_operators.size(); i > 0; --i)
@@ -137,9 +159,9 @@ public:
      */
     std::string to_string() const
     {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "template <typename myuint>\n";
-        ss << "myuint " << m_function_name << "(myuint val)\n";
+        ss << "myuint " << this->get_name() << "(myuint val)\n";
         ss << "{\n";
 
         for (auto const & op : m_operators)

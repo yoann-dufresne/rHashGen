@@ -94,6 +94,13 @@ public:
         return ss.str();
     }
 
+    std::string to_short() const override
+    {
+        std::ostringstream os;
+        os << "x" << m_multiplier;
+        return os.str();
+    }
+
     myuint apply (myuint value) const override
     {
         return value * m_multiplier;
@@ -103,11 +110,11 @@ public:
     {
         return true;
     }
-    
+
     bool clean_leftbits_needed() const override
     {
         return true;
     }
-};    
+};
 
 #endif // MULTIPLY_HPP
