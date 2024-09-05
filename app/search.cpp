@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     const size_t value_size = argparser.createParam<size_t>(31, "value-size",
         "Value size (in bits)", 'v', "Search domain").value();
 
-    const size_t sol_size = argparser.createParam<size_t>(10, "sol-size",
+    const size_t func_len = argparser.createParam<size_t>(3, "func-len",
         "Number of operations in the hash function", 'n', "Search domain").value();
 
     const size_t shift_min = argparser.createParam<size_t>(2, "shift-min",
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     CLUTCHLOG(info, "log-func   = " << log_func);
     CLUTCHLOG(info, "log-depth  = " << log_depth);
     CLUTCHLOG(info, "value-size = " << value_size);
-    CLUTCHLOG(info, "sol-size   = " << sol_size);
+    CLUTCHLOG(info, "func-len   = " << func_len);
     CLUTCHLOG(info, "shift-min  = " << shift_min);
     CLUTCHLOG(info, "shift-max  = " << shift_max);
     CLUTCHLOG(info, "shift-step = " << shift_step);
@@ -187,17 +187,6 @@ int main(int argc, char* argv[])
     ASSERT(forge.size() > 0);
     CLUTCHLOG(note, "OK");
 
-    CLUTCHLOG(progress, "Pick a random solution...");
-    std::vector<size_t> v;
-    v.reserve(sol_size);
-    std::mt19937 rng(seed);
-    std::uniform_int_distribution<int> uni(0, forge.size()-1);
-    for(size_t i=0; i<sol_size; ++i) {
-        v.push_back(uni(rng));
-    }
-    Combi sol(v, forge.size());
-    CLUTCHLOG(note, "OK");
-
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
     EvalFull<myuint, Combi> feval(value_size, forge);
@@ -215,6 +204,24 @@ int main(int argc, char* argv[])
     moRandomBestHC<Nb> search(neighborhood, feval, peval, check);
     CLUTCHLOG(note, "OK");
 
+    CLUTCHLOG(progress, "Pick a random solution...");
+    std::vector<size_t> v;
+    v.reserve(func_len);
+    std::mt19937 rng(seed);
+    std::uniform_int_distribution<int> uni(0, forge.size()-1);
+    for(size_t i=0; i<func_len; ++i) {
+        v.push_back(uni(rng));
+    }
+    Combi sol(v, forge.size());
+    CLUTCHLOG(info, "Initial solution: " << sol);
+    auto hf = feval.make_hashfuncs(sol);
+    CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
+
+    hf = feval.make_hashfuncs(sol);
+    std::clog << hf.forward.to_string() << std::endl;
+    std::clog << hf.reverse.to_string() << std::endl;
+    CLUTCHLOG(note, "OK");
+
     CLUTCHLOG(progress, "Evaluate first signature...");
     feval(sol);
     CLUTCHLOG(note, "Initial signature: " << sol);
@@ -224,23 +231,17 @@ int main(int argc, char* argv[])
     search(sol);
     CLUTCHLOG(note, "OK");
 
-    CLUTCHLOG(progress, "Found signature:");
+    CLUTCHLOG(progress, "Optimized solution:");
     CLUTCHLOG(note, sol );
 
+    CLUTCHLOG(progress, "Output optimized hash function:");
     // Real output.
-    HashFunction<myuint> hff("optimized_hash", value_size);
-    for(size_t i : sol.get()) {
-        CLUTCHLOG(xdebug, "Instantiate " << i << "th operator");
-        hff.add_operator( forge.instantiate_ptr(i) );
-    }
-    CLUTCHLOG(debug, "Complete with masks");
-    hff.complete_with_masks();
+    hf = feval.make_hashfuncs(sol);
+    ASSERT(hf.forward.size() > 0);
+    ASSERT(hf.reverse.size() > 0);
 
-    CLUTCHLOG(debug, "Invert");
-    HashFunction<myuint> hfr{hff.invert()};
-
-    std::cout << hff.to_string() << std::endl;
-    std::cout << hfr.to_string() << std::endl;
+    std::cout << hf.forward.to_string() << std::endl;
+    std::cout << hf.reverse.to_string() << std::endl;
 
     CLUTCHLOG(progress, "Done.");
 }
