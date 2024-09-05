@@ -37,14 +37,17 @@ class moCombinationNeighbor : public moIndexNeighbor<EOT,Fitness>
         /** Default constructor.
          */
         moCombinationNeighbor() :
-        #ifndef NDEBUG
-            _is_init(false)
-        #endif
+            moIndexNeighbor<EOT,Fitness>(),
+            #ifndef NDEBUG
+                _is_init(false)
+            #endif
         { }
 
         /** Copy constructor.
          */
         moCombinationNeighbor( const moCombinationNeighbor<EOT>& other) :
+            moNeighbor<EOT,Fitness>(other),
+            moIndexNeighbor<EOT,Fitness>(other),
             #ifndef NDEBUG
                 _is_init(other._is_init),
             #endif
@@ -59,6 +62,7 @@ class moCombinationNeighbor : public moIndexNeighbor<EOT,Fitness>
         moCombinationNeighbor<EOT>& operator=(
             const moCombinationNeighbor<EOT>& other)
         {
+            moIndexNeighbor<EOT,Fitness>::operator=(other);
             #ifndef NDEBUG
                 this->_is_init = other._is_init;
             #endif
