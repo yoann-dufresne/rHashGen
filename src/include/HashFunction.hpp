@@ -29,6 +29,20 @@ public:
         m_value_size(value_size)
     {};
 
+    HashFunction(HashFunction & other) :
+        m_function_name(other.m_function_name),
+        m_operators{std::move(other.m_operators)},
+        m_value_size(other.m_value_size)
+    {};
+
+    HashFunction<myuint>& operator=(const HashFunction<myuint>& other)
+    {
+        this->m_function_name = other.m_function_name;
+        this->m_operators = std::move(other.m_operators);
+        this->m_value_size = other.m_value_size;
+        return *this;
+    }
+
     ~HashFunction() = default;
 
     /** Get the name of the hash function
