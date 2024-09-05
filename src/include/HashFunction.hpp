@@ -195,4 +195,13 @@ public:
 
 };
 
+template <typename myuint>
+class HashFunctionPair
+{
+public:
+    HashFunctionPair( HashFunction<myuint> f, HashFunction<myuint> r ) : forward(f), reverse(r) {}
+    HashFunction<myuint> forward;
+    HashFunction<myuint> reverse;
+};
+
 #endif // HASHFUNCTION_HPP
