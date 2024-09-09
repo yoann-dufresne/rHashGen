@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_DOCS "Enable building of documentation" OFF)
 option(BUILD_TESTING "Enable building of tests" OFF)
 option(BUILD_FOR_LOCAL "Whether to make the executables dependant on the environment of the building computer (enables CMake's build with RPATH), may be necessary on HPC clusters" OFF)
-option(USE_LOCAL_PARADISEO "Use a local version of Paradiseo rather than the one installed on the system" OFF)
+option(USE_LOCAL_PARADISEO "Use a local version of Paradiseo rather than the one installed on the system" ON)
 
 # Common
 add_compile_options(-Wall -Wextra -pedantic)
@@ -39,8 +39,8 @@ include_directories(include)
 
 # ParadisEO
 if(USE_LOCAL_PARADISEO)
-    set(PARADISEO_ROOT "PARADISEO_NOT_FOUND" CACHE PATH "Where to find ParadisEO")
-    set(PARADISEO_BUILD "${PARADISEO_ROOT}/build" CACHE PATH "Build dir of ParadisEO")
+    set(PARADISEO_ROOT "${PROJECT_SOURCE_DIR}/external/paradiseo" CACHE PATH "Where to find ParadisEO")
+    set(PARADISEO_BUILD "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "Build dir of ParadisEO")
 
     include_directories(${PARADISEO_ROOT})
     include_directories(${PARADISEO_ROOT}/eo/src)
@@ -70,6 +70,10 @@ add_subdirectory(src)
 # Google Test
 add_subdirectory(external/googletest)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+# ParadisEO
+add_subdirectory(external/paradiseo)
+
 
 # Find all main files in the app directory
 file(GLOB APP_SOURCES ${PROJECT_SOURCE_DIR}/app/*.cpp)
