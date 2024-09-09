@@ -30,7 +30,7 @@ int main()
 
     CLUTCHLOG(progress, "Try HashFunc");
     // Create an instance of HashFunction with a value size of 64 bits
-    HashFunction<myuint> hashFunc("hash", value_size);
+    HashFunction<myuint> hashFunc(value_size, "hash");
 
     // Add shift operators
     hashFunc.add_operator(std::make_unique<Multiply<myuint>>(9, value_size));
