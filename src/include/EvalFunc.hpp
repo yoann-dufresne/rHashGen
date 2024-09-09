@@ -21,24 +21,31 @@ public:
         m_forge(forge)
     { }
 
-    virtual void operator()(EOT& sol) {
-        CLUTCHLOG(xdebug, "Evaluate solution: " << sol);
+    //! Instantiate the forward and reverse HashFunc from the given solution.
+    HashFunctionPair<myuint> make_hashfuncs( EOT& sol ) const
+    {
         ASSERT(sol.size() > 0);
         ASSERT(sol.nb_options() == m_forge.size());
 
-        HashFunction<myuint> hff("optimized_hash", m_value_size);
+        HashFunction<myuint> hff(m_value_size);
 
         CLUTCHLOG(xdebug, "Instantiate " << sol.size() << " operators:");
+        ASSERT(sol.size() > 0);
         for(size_t i : sol.get()) {
             // CLUTCHLOG(debug, "Instantiate " << i << "th operator");
             // NOTE: this is why we need a shared_ptr and cannot have a unique_ptr.
             hff.add_operator( m_forge.instantiate_ptr(i) );
         }
+        ASSERT(hff.size() == sol.size());
+        CLUTCHLOG(xdebug, "Got hash function: " << hff.get_name());
         CLUTCHLOG(xdebug, "Complete with masks");
         hff.complete_with_masks();
+        // ASSERT(hff.size() >= sol.size());
 
         CLUTCHLOG(xdebug, "Invert");
         HashFunction<myuint> hfr{hff.invert()};
+        // ASSERT(hfr.size() > 0);
+        CLUTCHLOG(xdebug, "Got inverted hash function: " << hfr.get_name());
 
         #ifndef NDEBUG
             CLUTCHLOG(xdebug, "Check inversion");
@@ -48,9 +55,24 @@ public:
             ASSERT(value == recovered);
         #endif
 
+        return HashFunctionPair<myuint>(hff, hfr);
+    }
+
+    //! Call interface.
+    virtual void operator()(EOT& sol) {
+        CLUTCHLOG(xdebug, "Evaluate solution: " << sol);
+
+        auto hffr = make_hashfuncs(sol);
+
+        HashFunction<myuint> hff = hffr.forward;
+        HashFunction<myuint> hfr = hffr.reverse;
+
+        // TODO: have a real objective function.
         const double quality = hff.size() + hfr.size();
+
         sol.fitness( quality );
-        CLUTCHLOG(debug, "Evaluated solution: " << sol);
+        CLUTCHLOG(xdebug, "Evaluated solution: " << sol);
+        CLUTCHLOG(xdebug, "Evaluated hash function: " << hff.get_name());
 
         ASSERT(not sol.invalid());
     }

@@ -23,7 +23,7 @@ TEST(HashingTest, uint32_t)
     // Generate 100 random hash functions to test them
     for (size_t idx{0} ; idx<100 ; idx++)
     {
-        HashFunction<myuint> hashFunc(std::string("hash_") + std::to_string(idx), 31);
+        HashFunction<myuint> hashFunc(31, std::string("hash_") + std::to_string(idx));
         // Compose the hash function with 30 Operators
         for (size_t i{0} ; i<30 ; i++)
         {

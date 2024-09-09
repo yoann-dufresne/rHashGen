@@ -40,6 +40,13 @@ public:
         return ss.str();
     }
 
+    std::string to_short() const override
+    {
+        std::ostringstream os;
+        os << "m" << m_mask_size;
+        return os.str();
+    }
+
     myuint apply(myuint value) const override
     {
         return value & m_mask;

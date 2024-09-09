@@ -47,6 +47,13 @@ public:
         return ss.str();
     }
 
+    std::string to_short() const override
+    {
+        std::ostringstream os;
+        os << "r" << m_shifts;
+        return os.str();
+    }
+
     myuint apply(myuint value) const override
     {
         return value ^ (value >> m_shifts);
