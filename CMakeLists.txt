@@ -23,8 +23,6 @@ add_compile_options(-Wall -Wextra -pedantic)
 # Clang
 #add_compile_options( -Wno-c++98-compat-pedantic -Wno-old-style-cast -Wno-padded -Wno-extra-semi-stmt -Wno-weak-vtables)
 
-add_compile_definitions(-DWITH_CLUTCHLOG)
-
 if(BUILD_FOR_LOCAL)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 endif()
