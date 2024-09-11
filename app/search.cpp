@@ -72,8 +72,7 @@ void make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t v
         forge.add< AddShift<myuint> >(i, value_size);
         CLUTCHLOG(xdebug, "AddShift << " << i);
 
-        forge.add< Masking<myuint> >(i);
-        CLUTCHLOG(xdebug, "Masking & " << i);
+        // Masking is only for completeness and is not considered for the forward functions.
     }
 
     #ifndef NDEBUG
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
     const size_t value_size = argparser.createParam<size_t>(31, "value-size",
         "Value size (in bits)", 'v', "Search domain").value();
 
-    const size_t func_len = argparser.createParam<size_t>(3, "func-len",
+    const size_t func_len = argparser.createParam<size_t>(5, "func-len",
         "Number of operations in the hash function", 'n', "Search domain").value();
 
     const size_t shift_min = argparser.createParam<size_t>(2, "shift-min",
@@ -215,7 +214,8 @@ int main(int argc, char* argv[])
     Combi sol(v, forge.size());
     CLUTCHLOG(info, "Initial solution: " << sol);
     auto hf = feval.make_hashfuncs(sol);
-    CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
+    CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name());
+    // << " / " << hf.reverse.get_name()); // Reverse hash function name is the forward one.
 
     hf = feval.make_hashfuncs(sol);
     std::clog << hf.forward.to_string() << std::endl;
