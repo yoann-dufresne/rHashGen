@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
+#include <map>
+#include <iostream>
 
 #include <mo>
 
@@ -137,6 +139,19 @@ int main(int argc, char* argv[])
         "Increment step for multipliers (note: only odd multipliers will be allowed)", 'u', "Search domain").value();
     Range mult_range(mult_min, mult_max, mult_step);
 
+    /***** Search domain arguments *****/
+
+    std::map<std::string,std::string> algorithms;
+    algorithms["HC"] = "Hill-Climbing";
+    algorithms["SA"] = "Simulated-Annealing";
+    std::ostringstream msg; msg << " (";
+    for(auto& kv : algorithms) {
+        msg << kv.first << ":" << kv.second << ", ";
+    }
+    msg << ")";
+    const std::string algo = argparser.createParam<std::string>("HC", "algo",
+        "Search metaheuristic"+msg.str(), 'a', "Algorithm").value();
+
     // make_verbose(argparser);
     make_help(argparser);
 
@@ -202,7 +217,13 @@ int main(int argc, char* argv[])
     check.add(best);    // Update the best state.
 
     // Hill climber, selecting a random solution among the equal-best ones.
-    moRandomBestHC<Nb> search(neighborhood, feval, peval, check);
+    std::unique_ptr< moLocalSearch<Nb> > palgo;
+    if( algo == "HC" ) {
+        palgo = std::make_unique< moRandomBestHC<Nb> >(neighborhood, feval, peval, check);
+    } else {
+        palgo = std::make_unique< moSA<Nb> >(neighborhood, feval, peval, check);
+    }
+    moLocalSearch<Nb>& search = *palgo;
     CLUTCHLOG(note, "OK");
 
     CLUTCHLOG(progress, "Pick a random solution...");
