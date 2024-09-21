@@ -12,7 +12,6 @@
 #include "XorRightShift.hpp"
 #include "Multiply.hpp"
 #include "AddShift.hpp"
-#include "Masking.hpp"
 #include "Multiply.hpp"
 #include "moCombination.hpp"
 #include "moCombinationNeighbor.hpp"
@@ -73,9 +72,6 @@ void make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t v
 
         forge.add< AddShift<myuint> >(i, value_size);
         CLUTCHLOG(xdebug, "AddShift << " << i);
-
-        forge.add< Masking<myuint> >(i);
-        CLUTCHLOG(xdebug, "Masking & " << i);
     }
 
     #ifndef NDEBUG
