@@ -99,19 +99,19 @@ int main(int argc, char* argv[])
     /***** Classical arguments *****/
 
     const std::string log_level = argparser.createParam<std::string>("Progress", "log-level",
-        "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug, default=Progress)", 'l', "Logging").value();
+        "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)", 'l', "Logging").value();
 
     const std::string log_file = argparser.createParam<std::string>(".*", "log-file",
-        "Regexp indicating which source file is allowed logging (default=all)", 'f', "Logging").value();
+        "Regexp indicating which source file is allowed logging (use '.*' to allow all)", 'f', "Logging").value();
 
     const std::string log_func = argparser.createParam<std::string>(".*", "log-func",
-        "Regexp indicating which function is allowed logging (default=all)", 'F', "Logging").value();
+        "Regexp indicating which function is allowed logging (use '.*' to allow all)", 'F', "Logging").value();
 
-    const size_t log_depth = argparser.createParam<size_t>(9999, "log-depth",
-        "Maximum stack depth above which logging is not allowed (default=no limit)", 'D', "Logging").value();
+    const size_t log_depth = argparser.createParam<size_t>(std::numeric_limits<size_t>::max(), "log-depth",
+        "Maximum stack depth above which logging is not allowed (the larger, the more is displayed)", 'D', "Logging").value();
 
     unsigned long long seed = argparser.createParam<long>(0, "seed",
-        "Seed of the pseudo-random generator (0 = Epoch)", 's', "Parameters").value();
+        "Seed of the pseudo-random generator (0 = use number of seconds since The Epoch)", 's', "Parameters").value();
 
     /***** Search domain arguments *****/
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
         "Increment step for multipliers (note: only odd multipliers will be allowed)", 'u', "Search domain").value();
     Range mult_range(mult_min, mult_max, mult_step);
 
-    make_verbose(argparser);
+    // make_verbose(argparser);
     make_help(argparser);
 
     clutchlog_config(); // common config
@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
     if(seed == 0) {
         seed = std::time(nullptr); // Epoch
     }
+
     CLUTCHLOG(info, "seed       = " << seed);
     CLUTCHLOG(info, "log-level  = " << log_level);
     CLUTCHLOG(info, "log-file   = " << log_file);
