@@ -216,8 +216,15 @@ int main(int argc, char* argv[])
     std::unique_ptr< moLocalSearch<Nb> > palgo;
     if( algo == "HC" ) {
         palgo = std::make_unique< moRandomBestHC<Nb> >(neighborhood, feval, peval, check);
-    } else {
+    } else if( algo == "SA" ) {
         palgo = std::make_unique< moSA<Nb> >(neighborhood, feval, peval, check);
+    } else {
+        std::ostringstream msg;
+        msg << "Unknown algorithm: " << algo << ", valid candidates are";
+        for( auto& kv : algorithms) {
+            msg << ", " << kv.first << " (" << kv.second << ")";
+        }
+        EXIT_ON_ERROR( Invalid_Argument, msg.str() );
     }
     moLocalSearch<Nb>& search = *palgo;
     CLUTCHLOG(note, "OK");
