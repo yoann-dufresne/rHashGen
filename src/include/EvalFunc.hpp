@@ -31,7 +31,7 @@ public:
 
         CLUTCHLOG(xdebug, "Instantiate " << sol.size() << " operators:");
         ASSERT(sol.size() > 0);
-        for(size_t i : sol.get()) {
+        for(size_t i : sol) {
             // CLUTCHLOG(debug, "Instantiate " << i << "th operator");
             // NOTE: this is why we need a shared_ptr and cannot have a unique_ptr.
             hff.add_operator( m_forge.instantiate_ptr(i) );

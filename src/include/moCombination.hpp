@@ -18,33 +18,33 @@
  * - {0,1,2}
  * - {1,1,1}
  * - {3,1,0}
- * - {3,1,3} 
+ * - {3,1,3}
  */
 template<class FitT>
-class moCombination : public EO<FitT>
+class moCombination : public eoInt<FitT>
 {
     public:
         /** The type for indices. */
         using AtomType = size_t;
 
         /** The data structures holding the indices. */
-        using ContainerType = std::vector<AtomType>;
+        // using ContainerType = std::vector<AtomType>;
 
         /** Constructor with initial sequence.
          *
          * @param combination A container.
          * @param nb_options The past-the-maximum value that can be set.
          */
-        moCombination(ContainerType combination, size_t nb_options) :
+        moCombination(std::vector<size_t> combination, size_t nb_options) :
+            eoInt<FitT>(combination),
             #ifndef NDEBUG
                 _is_init(true),
             #endif
-            _nb_options(nb_options),
-            _combination(combination)
+            _nb_options(nb_options)
         {
-            CLUTCHLOG(debug, "instantiated with combination of size " << _combination.size() << " and " << _nb_options << " options");
+            CLUTCHLOG(debug, "instantiated with combination of size " << this->size() << " and " << _nb_options << " options");
             assert(_nb_options >= 2); // At least 2 options.
-            for(const auto i : _combination) {
+            for(const auto i : *this) {
                 assert(i < _nb_options);
             }
         }
@@ -55,26 +55,27 @@ class moCombination : public EO<FitT>
          * @param nb_options The past-the-maximum value that can be set.
          */
         moCombination(size_t size, size_t nb_options) :
+            eoInt<FitT>(size, nb_options),
             #ifndef NDEBUG
                 _is_init(false),
             #endif
-            _nb_options(nb_options),
-            _combination(size, nb_options)
+            _nb_options(nb_options)
         {
-            CLUTCHLOG(debug, "instantiated with size " << _combination.size() << " and " << _nb_options << "options");
+            CLUTCHLOG(debug, "instantiated with size " << this->size() << " and " << _nb_options << "options");
             assert(_nb_options >= 2);
         }
 
         /** Empty constructor.
          */
         moCombination() :
+            eoInt<FitT>(),
             #ifndef NDEBUG
                 _is_init(false),
             #endif
             _nb_options(0)
         {
             CLUTCHLOG(debug, "empty instantiated");
-            assert(_combination.size() == 0);
+            assert(this->size() == 0);
         }
 
         /** Setter.
@@ -84,36 +85,36 @@ class moCombination : public EO<FitT>
          */
         void set(size_t index, size_t value)
         {
-            CLUTCHLOG(debug, "set combination: @" << index << "/" << _combination.size() << " =" << value << "/" << _nb_options);
+            CLUTCHLOG(debug, "set combination: @" << index << "/" << this->size() << " =" << value << "/" << _nb_options);
             assert(_is_init);
-            assert(index < _combination.size());
+            assert(index < this->size());
             assert(value < _nb_options);
-            if(_combination[index] == value) {
+            if((*this)[index] == value) {
                 std::clog << "call to `set` produces identical state" << std::endl;
                 // FIXME: eo::log << eo::warnings << "call to `set` produces identical state" << std::endl;
             }
-            _combination[index] = value;
+            (*this)[index] = value;
         }
 
-        /** Accessor to the sequence. */
-        ContainerType& get() {
-            return _combination;
-        }
+        /** Accessor to the sequence. */ // FIXME remove
+        // ContainerType& get() {
+        //     return *this;
+        // }
 
-        /** Accessor to an item of the sequence. */
-        AtomType& at(size_t index) {
-            return _combination.at(index);
-        }
+        // /** Accessor to an item of the sequence. */
+        // AtomType& at(size_t index) {
+        //     return _combination.at(index);
+        // }
 
-        /** Accessor to an item of the sequence. */
-        AtomType& operator[](size_t index) {
-            return _combination[index];
-        }
+        // /** Accessor to an item of the sequence. */
+        // AtomType& operator[](size_t index) {
+        //     return _combination[index];
+        // }
 
-        /** The current size of the sequence. */
-        size_t size() const {
-            return _combination.size();
-        }
+        // /** The current size of the sequence. */
+        // size_t size() const {
+        //     return _combination.size();
+        // }
 
         /** The size of the possible indices. */
         size_t nb_options() const {
@@ -124,8 +125,8 @@ class moCombination : public EO<FitT>
         virtual void printOn(std::ostream& out) const override {
             assert(_is_init);
             EO<FitT>::printOn(out); // Fitness.
-            out << _combination.size();
-            for(const auto i : _combination) {
+            out << this->size();
+            for(const auto i : *this) {
                 out << " " << i;
             }
         }
@@ -153,7 +154,7 @@ class moCombination : public EO<FitT>
         size_t _nb_options;
 
         //! The sequence of indices.
-        ContainerType _combination;
+        // ContainerType _combination;
 };
 
 #endif // MOCOMBINATION_HPP

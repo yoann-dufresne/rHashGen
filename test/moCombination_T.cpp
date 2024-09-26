@@ -10,7 +10,7 @@ TEST(moCombination, Instanciation)
     c.set(1,2);
     c.set(5,4);
     moCombination<double>::ContainerType v{1,2,2,3,4,4};
-    moCombination<double>::ContainerType w = c.get();
+    moCombination<double>::ContainerType w = c;
     ASSERT_EQ(v.size(), w.size()) << "vectors have different size";
     for (size_t i=0; i < w.size(); ++i) {
         ASSERT_EQ(v[i], w[i]) << "vector not correctly set at index " << i;
