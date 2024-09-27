@@ -24,6 +24,10 @@
 
 using myuint = uint32_t;
 
+using Min = eoMinimizingFitness;
+using Combi = moCombination<Min>;
+using CombiMO = moeoIntVector<QualityAndRuntime>;
+
 //! Error codes returned on exit.
 enum class Error : unsigned char {
     No_Error = 0,
@@ -86,6 +90,73 @@ void make_domain(eoForgeVector< Operator<myuint> >& forge, size_t value_size, Ra
         }
     }
     ASSERT(nb_multipliers > 0);
+}
+
+std::string format_hashfunc(HashFunctionPair<myuint>& hf, std::string indent = "    ")
+{
+    ASSERT(hf.forward.size() > 0);
+    ASSERT(hf.reverse.size() > 0);
+
+    std::ostringstream out;
+    out << "# YAML\n";
+    out << "rHashGen:\n";
+
+    std::string line;
+
+    out << indent << "forward: |" << indent.size() << "\n";
+    std::istringstream isf(hf.forward.to_string());
+    while( std::getline(isf, line)) {
+        out << indent << indent << line << "\n";
+    }
+
+    out << indent << "reverse: |" << indent.size() << "\n";
+    std::istringstream isr(hf.reverse.to_string());
+    while( std::getline(isr, line)) {
+        out << indent << indent << line << "\n";
+    }
+
+    return out.str();
+}
+
+std::string format_solution(const Combi& sol, const size_t value_size, eoForgeVector< Operator<myuint> >& forge, std::string indent = "    ")
+{
+    CLUTCHLOG(progress, "Optimized solution:");
+    CLUTCHLOG(note, sol );
+    auto hf = make_hashfuncs(sol, value_size, forge);
+
+    CLUTCHLOG(progress, "Output optimized hash function:");
+
+    std::ostringstream out;
+    out << format_hashfunc(hf, indent);
+
+    out << indent<< "solution: \"" << sol << "\"\n"
+        << indent<< "quality: " << sol.fitness() << "\n"
+        << "" << std::endl;
+
+    CLUTCHLOG(progress, "Done.");
+
+    return out.str();
+}
+
+std::string format_solution(const CombiMO& sol, const size_t value_size, eoForgeVector< Operator<myuint> >& forge, std::string indent = "    ")
+{
+    CLUTCHLOG(progress, "Optimized solution:");
+    CLUTCHLOG(note, sol );
+    auto hf = make_hashfuncs(sol, value_size, forge);
+
+    CLUTCHLOG(progress, "Output optimized hash function:");
+
+    std::ostringstream out;
+    out << format_hashfunc(hf, indent);
+
+    out << indent<< "solution: \"" << sol << "\"\n"
+        << indent<< "quality: " << sol.objectiveVector(0) << "\n"
+        << indent<< "runtime: " << sol.objectiveVector(1) << "\n"
+        << "" << std::endl;
+
+    CLUTCHLOG(progress, "Done.");
+
+    return out.str();
 }
 
 int main(int argc, char* argv[])
@@ -204,8 +275,6 @@ int main(int argc, char* argv[])
 
     if( algo == "HC" or algo == "SA" ) {
 
-        using Min = eoMinimizingFitness;
-        using Combi = moCombination<Min>;
         using Nb = moCombinationNeighbor<Combi>;
         using NbHood = moCombinationNeighborhood<Combi>;
 
@@ -243,8 +312,8 @@ int main(int argc, char* argv[])
         auto hf = make_hashfuncs(sol, value_size, forge);
         CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
 
-        std::clog << hf.forward.to_string() << std::endl;
-        std::clog << hf.reverse.to_string() << std::endl;
+        // std::clog << hf.forward.to_string() << std::endl;
+        // std::clog << hf.reverse.to_string() << std::endl;
         CLUTCHLOG(note, "OK");
 
         CLUTCHLOG(progress, "Evaluate first signature...");
@@ -256,73 +325,51 @@ int main(int argc, char* argv[])
         search(sol);
         CLUTCHLOG(note, "OK");
 
-        CLUTCHLOG(progress, "Optimized solution:");
-        CLUTCHLOG(note, sol );
-        hf = make_hashfuncs(sol, value_size, forge);
-
-        CLUTCHLOG(progress, "Output optimized hash function:");
-        // Real output.
-        ASSERT(hf.forward.size() > 0);
-        ASSERT(hf.reverse.size() > 0);
-
-        std::cout << hf.forward.to_string() << std::endl;
-        std::cout << hf.reverse.to_string() << std::endl;
-
-        CLUTCHLOG(progress, "Done.");
+        const std::string out = format_solution(sol, value_size, forge);
+        std::cout << out << std::endl;
 
 
     } else if( algo == "NSGA2" ) {
 
-        using Combi = moeoIntVector<QualityAndRuntime>;
         using ReVec = moeoRealVector<QualityAndRuntime>;
 
-        EvalMO<myuint,Combi> eval(value_size, forge);
-        eoPopLoopEval<Combi> popEval(eval);
+        EvalMO<myuint,CombiMO> eval(value_size, forge);
+        eoPopLoopEval<CombiMO> popEval(eval);
 
         // Crossover
-        eoQuadCloneOp<Combi> xover; // TODO use a real crossover
+        eoQuadCloneOp<CombiMO> xover; // TODO use a real crossover
 
         // Mutation
-        using MutWrapper = eoRealToIntMonOp<Combi,ReVec>;
+        using MutWrapper = eoRealToIntMonOp<CombiMO,ReVec>;
         eoDetUniformMutation<ReVec> mutreal(/*range*/1.5, /*nb*/1); // TODO tune
         eoIntInterval bounds(0,forge.size()-1);
         MutWrapper mutation(mutreal, bounds);
 
-        using InitWrapper = eoRealToIntInit<Combi,ReVec>;
+        using InitWrapper = eoRealToIntInit<CombiMO,ReVec>;
         eoRealVectorBounds rebounds(func_len, 0, forge.size()-1);
         eoRealInitBounded<ReVec> initreal(rebounds);
         InitWrapper init(initreal, bounds);
 
-        eoQuadGenOp<Combi> genOp(xover);
-        eoSGATransform<Combi> transform(xover, 0.1, mutation, 0.1);
-        eoGenContinue<Combi> continuator(10);
+        eoQuadGenOp<CombiMO> genOp(xover);
+        eoSGATransform<CombiMO> transform(xover, 0.1, mutation, 0.1);
+        eoGenContinue<CombiMO> continuator(10);
 
         // build NSGA-II
-        moeoNSGAII<Combi> algo(20, eval, xover, 1.0, mutation, 1.0);
+        moeoNSGAII<CombiMO> algo(20, eval, xover, 1.0, mutation, 1.0);
         CLUTCHLOG(note, "OK");
 
         CLUTCHLOG(progress, "Initialize population...");
-        eoPop<Combi> pop(20, init);
+        eoPop<CombiMO> pop(20, init);
         CLUTCHLOG(note, "OK");
 
         CLUTCHLOG(progress, "Solver run...");
         algo(pop);
         CLUTCHLOG(note, "OK");
 
-        CLUTCHLOG(progress, "Optimized solution:");
         auto sol = pop.best_element();
-        CLUTCHLOG(note, sol );
-        auto hf = make_hashfuncs(sol, value_size, forge);
 
-        CLUTCHLOG(progress, "Output optimized hash function:");
-        // Real output.
-        ASSERT(hf.forward.size() > 0);
-        ASSERT(hf.reverse.size() > 0);
-
-        std::cout << hf.forward.to_string() << std::endl;
-        std::cout << hf.reverse.to_string() << std::endl;
-
-        CLUTCHLOG(progress, "Done.");
+        const std::string out = format_solution(sol, value_size, forge);
+        std::cout << out << std::endl;
 
 
     } else {
