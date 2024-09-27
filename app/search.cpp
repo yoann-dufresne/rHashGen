@@ -239,10 +239,10 @@ int main(int argc, char* argv[])
     }
     Combi sol(v, forge.size());
     CLUTCHLOG(info, "Initial solution: " << sol);
-    auto hf = feval.make_hashfuncs(sol);
+    auto hf = make_hashfuncs(sol, value_size, forge);
     CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
 
-    hf = feval.make_hashfuncs(sol);
+    hf = make_hashfuncs(sol, value_size, forge);
     std::clog << hf.forward.to_string() << std::endl;
     std::clog << hf.reverse.to_string() << std::endl;
     CLUTCHLOG(note, "OK");
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
 
     CLUTCHLOG(progress, "Output optimized hash function:");
     // Real output.
-    hf = feval.make_hashfuncs(sol);
+    hf = make_hashfuncs(sol, value_size, forge);
     ASSERT(hf.forward.size() > 0);
     ASSERT(hf.reverse.size() > 0);
 
