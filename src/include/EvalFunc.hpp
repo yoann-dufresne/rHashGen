@@ -6,7 +6,22 @@
 
 #include "log.h"
 
-//! Instantiate the forward and reverse HashFunc from the given solution.
+//! Structure to gather forward and reverse hash functions, as outputed by make_hashfuncs.
+template <typename myuint>
+class HashFunctionPair
+{
+public:
+    HashFunctionPair( HashFunction<myuint> f, HashFunction<myuint> r ) : forward(f), reverse(r) {}
+    HashFunction<myuint> forward;
+    HashFunction<myuint> reverse;
+};
+
+/** Instantiate the forward and reverse HashFunc from the given solution.
+ *
+ * @param sol the Paradiseo solution representing a hash function (i.e. a sequence of indices)
+ * @param value_size The size (in bits) of the values to manipulate
+ * @param forge The set of possible parametrized hash operators.
+ */
 template<typename myuint, typename EOT>
 HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, eoForgeVector<Operator<myuint>>& forge )
 {
@@ -44,7 +59,7 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, eoForgeVec
     return HashFunctionPair<myuint>(hff, hfr);
 }
 
-
+//! Evaluates a mono-objective solution from scratch.
 template<typename myuint, typename EOT>
 class EvalFull : public eoEvalFunc< EOT >
 {
@@ -56,6 +71,11 @@ protected:
     eoForgeVector<OpItf>& m_forge;
 
 public:
+    /** Constructor
+     *
+     * @param value_size The size (in bits) of the values to manipulate
+     * @param forge The set of possible parametrized hash operators.
+     */
     EvalFull(size_t value_size, eoForgeVector<OpItf>& forge) :
         m_value_size(value_size),
         m_forge(forge)
@@ -82,10 +102,7 @@ public:
 
 };
 
-/** Partial evaluator that actually perform a full evaluation.
- *
- * This is to test that a partial evaluation ends on the same value than a full evaluation.
- */
+//! Partial evaluator that actually perform a full evaluation.
 template<typename myuint, typename EOT>
 class EvalTest : public moEval<moCombinationNeighbor<EOT>>
 {
@@ -124,11 +141,14 @@ class EvalTest : public moEval<moCombinationNeighbor<EOT>>
 };
 
 
-
+/** Multi-objective trait
+ *
+ * Indicates the number of objectives, and which one is to be minimized.
+ */
 class QualityAndRuntimeTraits : public moeoObjectiveVectorTraits
 {
 public:
-    static bool minimizing (int d)
+    static bool minimizing(int d)
     {
         switch(d) {
             case 0: // quality
@@ -139,7 +159,7 @@ public:
                 throw(std::out_of_range("Only two objectives are supported"));
         }
     }
-    static bool maximizing (int d)
+    static bool maximizing(int d)
     {
         switch(d) {
             case 0: // quality
@@ -150,14 +170,18 @@ public:
                 throw(std::out_of_range("Only two objectives are supported"));
         }
     }
-    static unsigned int nObjectives ()
+    static unsigned int nObjectives()
     {
         return 2;
     }
 };
 
+//! Objectives values are stored in a vector of values.
 using QualityAndRuntime = moeoRealObjectiveVector<QualityAndRuntimeTraits>;
 
+
+/** Multi-objective evaluation.
+ */
 template<typename myuint, typename MOEOT>
 class EvalMO : public moeoEvalFunc<MOEOT>
 {
@@ -170,6 +194,11 @@ protected:
     eoForgeVector<OpItf>& m_forge;
 
 public:
+    /** Constructor
+     *
+     * @param value_size The size (in bits) of the values to manipulate
+     * @param forge The set of possible parametrized hash operators.
+     */
     EvalMO(size_t value_size, eoForgeVector<OpItf>& forge) :
         m_value_size(value_size),
         m_forge(forge)
@@ -188,8 +217,6 @@ public:
         // TODO: have a real objective function.
         const QualityAndRuntime::Type quality = hff.size() * hfr.size();
         const QualityAndRuntime::Type runtime = hff.size() + hfr.size();
-
-        // moeoRealObjectiveVector<QualityAndRuntime> qualrunt;
 
         sol.objectiveVector(0, quality );
         sol.objectiveVector(1, runtime );
