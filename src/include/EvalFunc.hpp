@@ -135,6 +135,8 @@ public:
                 return false;
             case 1: // runtime
                 return true;
+            default:
+                throw(std::out_of_range("Only two objectives are supported"));
         }
     }
     static bool maximizing (int d)
@@ -144,6 +146,8 @@ public:
                 return true;
             case 1: // runtime
                 return false;
+            default:
+                throw(std::out_of_range("Only two objectives are supported"));
         }
     }
     static unsigned int nObjectives ()
