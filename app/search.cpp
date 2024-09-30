@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
         "Increment step for multipliers (note: only odd multipliers will be allowed)", 'u', "Search domain").value();
     Range mult_range(mult_min, mult_max, mult_step);
 
-    /***** Search domain arguments *****/
+    /***** Solver arguments *****/
 
     std::map<std::string,std::string> algorithms;
     algorithms["HC"] = "Hill-Climbing [mono-objective]";
@@ -218,6 +218,10 @@ int main(int argc, char* argv[])
     msg << ")";
     const std::string algo = argparser.createParam<std::string>("HC", "algo",
         "Search metaheuristic"+msg.str(), 'a', "Algorithm").value();
+
+    const bool init_sol = argparser.createParam<bool>(false, "init-sol",
+        "Read initial solution from standard input", 'I', "Algorithm").value();
+
 
     // make_verbose(argparser);
     make_help(argparser);
@@ -299,15 +303,27 @@ int main(int argc, char* argv[])
         moLocalSearch<Nb>& search = *palgo;
         CLUTCHLOG(note, "OK");
 
-        CLUTCHLOG(progress, "Pick a random solution...");
-        std::vector<size_t> v;
-        v.reserve(func_len);
-        std::mt19937 rng(seed);
-        std::uniform_int_distribution<int> uni(0, forge.size()-1);
-        for(size_t i=0; i<func_len; ++i) {
-            v.push_back(uni(rng));
+        Combi sol;
+        if( init_sol ) {
+            CLUTCHLOG(progress, "Read solution from standard input...");
+            sol.readFrom(std::cin);
+            CLUTCHLOG(info, "Read solution: " << sol);
+            sol.invalidate(); // Always invalidate, in case fitness input is wrong..
+            ASSERT(sol.size() == func_len);
+            ASSERT(sol.nb_options() == forge.size());
+
+        } else {
+            CLUTCHLOG(progress, "Pick a random solution...");
+            std::vector<size_t> v;
+            v.reserve(func_len);
+            std::mt19937 rng(seed);
+            std::uniform_int_distribution<int> uni(0, forge.size()-1);
+            for(size_t i=0; i<func_len; ++i) {
+                v.push_back(uni(rng));
+            }
+            sol = Combi(v, forge.size());
         }
-        Combi sol(v, forge.size());
+
         CLUTCHLOG(info, "Initial solution: " << sol);
         auto hf = make_hashfuncs(sol, value_size, forge);
         CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
