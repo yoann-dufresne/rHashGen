@@ -64,32 +64,55 @@ struct Range {
     size_t step;
 };
 
-void make_domain(eoForgeVector< Operator<myuint> >& forge, size_t value_size, Range shift_range, Range mult_range)
+void make_domain(eoForgeVector< Operator<myuint> >& forge, size_t value_size, Range shift_range, Range mult_range, std::set<std::string> allowed_operators={"XorLeftShift","XorRightShift","AddShift","Multiply"} )
 {
+    std::map<std::string,size_t> op_count;
+        op_count["XorLeftShift"] = 0;
+        op_count["XorRightShift"] = 0;
+        op_count["AddShift"] = 0;
+        op_count["Multiply"] = 0;
+
     for(size_t i = shift_range.min; i < shift_range.max; i+=shift_range.step) {
-        forge.add< XorLeftShift<myuint> >(i, value_size);
-        CLUTCHLOG(xdebug, "XorLeftShift << " << i);
+        if(allowed_operators.contains("XorLeftShift")) {
+            forge.add< XorLeftShift<myuint> >(i, value_size);
+            CLUTCHLOG(xdebug, "XorLeftShift << " << i);
+            op_count["XorLeftShift"] += 1;
+        }
 
-        forge.add< XorRightShift<myuint> >(i, value_size);
-        CLUTCHLOG(xdebug, "XorRightShift << " << i);
+        if(allowed_operators.contains("XorRightShift")) {
+            forge.add< XorRightShift<myuint> >(i, value_size);
+            CLUTCHLOG(xdebug, "XorRightShift << " << i);
+            op_count["XorRightShift"] += 1;
+        }
 
-        forge.add< AddShift<myuint> >(i, value_size);
-        CLUTCHLOG(xdebug, "AddShift << " << i);
-    }
-
-    #ifndef NDEBUG
-    size_t nb_multipliers = 0;
-    #endif
-    for(size_t i = mult_range.min; i < shift_range.max; i+=mult_range.step) {
-        if(i % 2 == 1) { // Only odd multipliers are allowed.
-            forge.add< Multiply<myuint> >(i, value_size);
-            CLUTCHLOG(xdebug, "Multiply * " << i);
-            #ifndef NDEBUG
-            nb_multipliers += 1;
-            #endif
+        if(allowed_operators.contains("AddShift")) {
+            forge.add< AddShift<myuint> >(i, value_size);
+            CLUTCHLOG(xdebug, "AddShift << " << i);
+            op_count["AddShift"] += 1;
         }
     }
-    ASSERT(nb_multipliers > 0);
+
+    if(allowed_operators.contains("Multiply")) {
+        size_t nb_multipliers = 0;
+        for(size_t i = mult_range.min; i < shift_range.max; i+=mult_range.step) {
+            if(i % 2 == 1) { // Only odd multipliers are allowed.
+                forge.add< Multiply<myuint> >(i, value_size);
+                CLUTCHLOG(xdebug, "Multiply * " << i);
+                #ifndef NDEBUG
+                nb_multipliers += 1;
+                #endif
+            }
+        }
+        ASSERT(nb_multipliers > 0);
+        op_count["Multiply"] = nb_multipliers;
+    }
+
+    CLUTCHLOG(note, "Domain contains " << forge.size() << " operator instances:");
+    CLUTCHCODE(note,
+        for(auto kv : op_count) {
+            CLUTCHLOGD(note, kv.second << " operator " << kv.first, 1);
+        }
+    );
 }
 
 std::string format_hashfunc(HashFunctionPair<myuint>& hf, std::string indent = "    ")
@@ -159,6 +182,21 @@ std::string format_solution(const CombiMO& sol, const size_t value_size, eoForge
     return out.str();
 }
 
+std::set<std::string> split_in_set(std::string str, const std::string sep = ",")
+{
+    std::set<std::string> items;
+    size_t pos = 0;
+    std::string substr;
+    while((pos = str.find(sep)) != std::string::npos) {
+        substr = str.substr(0, pos);
+        items.insert(substr);
+        str.erase(0, pos + sep.length());
+    }
+    items.insert(str);
+
+    return items;
+}
+
 int main(int argc, char* argv[])
 {
     CLUTCHLOG(progress, "Set config...");
@@ -204,6 +242,16 @@ int main(int argc, char* argv[])
     const size_t mult_step = argparser.createParam<size_t>(2, "mult-step",
         "Increment step for multipliers (note: only odd multipliers will be allowed)", 'u', "Search domain").value();
     Range mult_range(mult_min, mult_max, mult_step);
+
+    const std::string allowed_ops = argparser.createParam<std::string>("XorLeftShift,XorRightShift,AddShift,Multiply", "operators",
+        "Operators allowed in the domain, as a comma-separated list", 'o', "Search domain").value();
+    std::set allowed_operators = split_in_set(allowed_ops, ",");
+    const std::set<std::string> all_operators = {"XorLeftShift","XorRightShift","AddShift","Multiply"};
+    for(const std::string& s : allowed_operators) {
+        if(not all_operators.contains(s)) {
+            EXIT_ON_ERROR(Invalid_Argument, "Operator \"" << s << "\" is unknown");
+        }
+    }
 
     /***** Solver arguments *****/
 
@@ -269,8 +317,7 @@ int main(int argc, char* argv[])
 
     CLUTCHLOG(progress, "Create the search domain...");
     eoForgeVector< Operator<myuint> > forge(/*always_reinstantiate*/true);
-    make_domain(forge, value_size, shift_range, mult_range);
-    CLUTCHLOG(info, forge.size() << " operators");
+    make_domain(forge, value_size, shift_range, mult_range, allowed_operators);
     ASSERT(forge.size() > 0);
     CLUTCHLOG(note, "OK");
 
