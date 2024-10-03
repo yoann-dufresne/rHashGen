@@ -6,8 +6,13 @@
 
 #include <mo>
 #include <eo>
+#include <edo>
 #include <es.h>
 #include <moeo>
+#include <do/make_pop.h>
+#include <do/make_run.h>
+#include <do/make_continue.h>
+#include <do/make_checkpoint.h>
 
 #include "HashFunction.hpp"
 #include "Operator.hpp"
@@ -26,7 +31,7 @@ using myuint = uint32_t;
 
 using Min = eoMinimizingFitness;
 using Combi = moCombination<Min>;
-using CombiMO = moeoIntVector<QualityAndRuntime>;
+using CombiMO = moeoIntVector<combi::QualityAndRuntime>;
 
 //! Error codes returned on exit.
 enum class Error : unsigned char {
@@ -145,7 +150,7 @@ std::string format_solution(const Combi& sol, const size_t value_size, eoForgeVe
 {
     CLUTCHLOG(progress, "Optimized solution:");
     CLUTCHLOG(note, sol );
-    auto hf = make_hashfuncs(sol, value_size, forge);
+    auto hf = combi::make_hashfuncs(sol, value_size, forge);
 
     CLUTCHLOG(progress, "Output optimized hash function:");
 
@@ -165,7 +170,7 @@ std::string format_solution(const CombiMO& sol, const size_t value_size, eoForge
 {
     CLUTCHLOG(progress, "Optimized solution:");
     CLUTCHLOG(note, sol );
-    auto hf = make_hashfuncs(sol, value_size, forge);
+    auto hf = combi::make_hashfuncs(sol, value_size, forge);
 
     CLUTCHLOG(progress, "Output optimized hash function:");
 
@@ -193,6 +198,21 @@ std::set<std::string> split_in_set(std::string str, const std::string sep = ",")
         str.erase(0, pos + sep.length());
     }
     items.insert(str);
+
+    return items;
+}
+
+std::vector<std::string> split_in_vec(std::string str, const std::string sep = ",")
+{
+    std::vector<std::string> items;
+    size_t pos = 0;
+    std::string substr;
+    while((pos = str.find(sep)) != std::string::npos) {
+        substr = str.substr(0, pos);
+        items.push_back(substr);
+        str.erase(0, pos + sep.length());
+    }
+    items.push_back(str);
 
     return items;
 }
@@ -245,7 +265,7 @@ int main(int argc, char* argv[])
 
     const std::string allowed_ops = argparser.createParam<std::string>("XorLeftShift,XorRightShift,AddShift,Multiply", "operators",
         "Operators allowed in the domain, as a comma-separated list", 'o', "Search domain").value();
-    std::set allowed_operators = split_in_set(allowed_ops, ",");
+    const std::set<std::string> allowed_operators = split_in_set(allowed_ops, ",");
     const std::set<std::string> all_operators = {"XorLeftShift","XorRightShift","AddShift","Multiply"};
     for(const std::string& s : allowed_operators) {
         if(not all_operators.contains(s)) {
@@ -256,9 +276,10 @@ int main(int argc, char* argv[])
     /***** Solver arguments *****/
 
     std::map<std::string,std::string> algorithms;
-    algorithms["HC"] = "Hill-Climbing [mono-objective]";
-    algorithms["SA"] = "Simulated-Annealing [mono-objective]";
-    algorithms["NSGA2"] = "NSGAII [bi-objective]";
+    algorithms["HC"] = "Hill-Climbing [mono-objective, fixed-size-combination]";
+    algorithms["SA"] = "Simulated-Annealing [mono-objective, fixed-size-combination]";
+    algorithms["NSGA2"] = "NSGAII [bi-objective, fixed-size-combination]";
+    algorithms["CMAES"] = "CMA-ES [mono-objective, parametrize]";
     std::ostringstream msg; msg << " (";
     for(auto& kv : algorithms) {
         msg << kv.first << ":" << kv.second << ", ";
@@ -270,6 +291,12 @@ int main(int argc, char* argv[])
     const bool init_sol = argparser.createParam<bool>(false, "init-sol",
         "Read initial solution from standard input", 'I', "Algorithm").value();
 
+    const bool parametrize = argparser.createParam<bool>(false, "parametrize",
+        "Only tune the parameters and do not change the operators."
+        "This will interpret --operators=<SEQ> as a sequence of operators to be parametrized.", 'P', "Algorithm").value();
+
+    const size_t pop_size = argparser.createParam<size_t>(100, "pop-size",
+        "Population size for evolutionary algorithms", 'p', "Algorithm").value();
 
     // make_verbose(argparser);
     make_help(argparser);
@@ -324,123 +351,193 @@ int main(int argc, char* argv[])
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
 
-    if( algo == "HC" or algo == "SA" ) {
+    if( not parametrize ) {
+        if( algo == "HC" or algo == "SA" ) {
 
-        using Nb = moCombinationNeighbor<Combi>;
-        using NbHood = moCombinationNeighborhood<Combi>;
+            using Nb = moCombinationNeighbor<Combi>;
+            using NbHood = moCombinationNeighborhood<Combi>;
 
-        EvalFull<myuint, Combi> feval(value_size, forge);
-        EvalTest<myuint, Combi> peval(feval);
+            combi::EvalFull<myuint, Combi> feval(value_size, forge);
+            combi::EvalTest<myuint, Combi> peval(feval);
 
-        NbHood neighborhood;
+            NbHood neighborhood;
 
-        // Continue search until exhaustion of the neighborhood.
-        moTrueContinuator<Nb> until_end;
-        moCheckpoint<Nb> check(until_end);
-        moBestFitnessStat<Combi> best;
-        check.add(best);    // Update the best state.
+            // Continue search until exhaustion of the neighborhood.
+            moTrueContinuator<Nb> until_end;
+            moCheckpoint<Nb> check(until_end);
+            moBestFitnessStat<Combi> best;
+            check.add(best);    // Update the best state.
 
-        // Hill climber, selecting a random solution among the equal-best ones.
-        std::unique_ptr< moLocalSearch<Nb> > palgo;
-        if( algo == "HC" ) {
-            palgo = std::make_unique< moRandomBestHC<Nb> >(neighborhood, feval, peval, check);
-        } else if( algo == "SA" ) {
-            palgo = std::make_unique< moSA<Nb> >(neighborhood, feval, peval, check);
-        }
-        moLocalSearch<Nb>& search = *palgo;
-        CLUTCHLOG(note, "OK");
-
-        Combi sol;
-        if( init_sol ) {
-            CLUTCHLOG(progress, "Read solution from standard input...");
-            sol.readFrom(std::cin);
-            CLUTCHLOG(info, "Read solution: " << sol);
-            sol.invalidate(); // Always invalidate, in case fitness input is wrong..
-            ASSERT(sol.size() == func_len);
-            ASSERT(sol.nb_options() == forge.size());
-
-        } else {
-            CLUTCHLOG(progress, "Pick a random solution...");
-            std::vector<size_t> v;
-            v.reserve(func_len);
-            std::mt19937 rng(seed);
-            std::uniform_int_distribution<int> uni(0, forge.size()-1);
-            for(size_t i=0; i<func_len; ++i) {
-                v.push_back(uni(rng));
+            // Hill climber, selecting a random solution among the equal-best ones.
+            std::unique_ptr< moLocalSearch<Nb> > palgo;
+            if( algo == "HC" ) {
+                palgo = std::make_unique< moRandomBestHC<Nb> >(neighborhood, feval, peval, check);
+            } else if( algo == "SA" ) {
+                palgo = std::make_unique< moSA<Nb> >(neighborhood, feval, peval, check);
             }
-            sol = Combi(v, forge.size());
+            moLocalSearch<Nb>& search = *palgo;
+            CLUTCHLOG(note, "OK");
+
+            Combi sol;
+            if( init_sol ) {
+                CLUTCHLOG(progress, "Read solution from standard input...");
+                sol.readFrom(std::cin);
+                CLUTCHLOG(info, "Read solution: " << sol);
+                sol.invalidate(); // Always invalidate, in case fitness input is wrong..
+                ASSERT(sol.size() == func_len);
+                ASSERT(sol.nb_options() == forge.size());
+
+            } else {
+                CLUTCHLOG(progress, "Pick a random solution...");
+                std::vector<size_t> v;
+                v.reserve(func_len);
+                std::mt19937 rng(seed);
+                std::uniform_int_distribution<int> uni(0, forge.size()-1);
+                for(size_t i=0; i<func_len; ++i) {
+                    v.push_back(uni(rng));
+                }
+                sol = Combi(v, forge.size());
+            }
+
+            CLUTCHLOG(info, "Initial solution: " << sol);
+            auto hf = combi::make_hashfuncs(sol, value_size, forge);
+            CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
+
+            // std::clog << hf.forward.to_string() << std::endl;
+            // std::clog << hf.reverse.to_string() << std::endl;
+            CLUTCHLOG(note, "OK");
+
+            CLUTCHLOG(progress, "Evaluate first signature...");
+            feval(sol);
+            CLUTCHLOG(note, "Initial signature: " << sol);
+            CLUTCHLOG(note, "OK");
+
+            CLUTCHLOG(progress, "Solver run...");
+            search(sol);
+            CLUTCHLOG(note, "OK");
+
+            const std::string out = format_solution(sol, value_size, forge);
+            std::cout << out << std::endl;
+
+
+        } else if( algo == "NSGA2" ) {
+
+            using ReVec = moeoRealVector<combi::QualityAndRuntime>;
+
+            combi::EvalMO<myuint,CombiMO> eval(value_size, forge);
+            eoPopLoopEval<CombiMO> popEval(eval);
+
+            // Crossover
+            eoQuadCloneOp<CombiMO> xover; // TODO use a real crossover
+
+            // Mutation
+            using MutWrapper = eoRealToIntMonOp<CombiMO,ReVec>;
+            eoDetUniformMutation<ReVec> mutreal(/*range*/1.5, /*nb*/1); // TODO tune
+            eoIntInterval bounds(0,forge.size()-1);
+            MutWrapper mutation(mutreal, bounds);
+
+            using InitWrapper = eoRealToIntInit<CombiMO,ReVec>;
+            eoRealVectorBounds rebounds(func_len, 0, forge.size()-1);
+            eoRealInitBounded<ReVec> initreal(rebounds);
+            InitWrapper init(initreal, bounds);
+
+            eoQuadGenOp<CombiMO> genOp(xover);
+            eoSGATransform<CombiMO> transform(xover, 0.1, mutation, 0.1);
+            eoGenContinue<CombiMO> continuator(10);
+
+            // build NSGA-II
+            moeoNSGAII<CombiMO> algo(20, eval, xover, 1.0, mutation, 1.0);
+            CLUTCHLOG(note, "OK");
+
+            CLUTCHLOG(progress, "Initialize population...");
+            eoPop<CombiMO> pop(20, init);
+            CLUTCHLOG(note, "OK");
+
+            CLUTCHLOG(progress, "Solver run...");
+            algo(pop);
+            CLUTCHLOG(note, "OK");
+
+            auto sol = pop.best_element();
+
+            const std::string out = format_solution(sol, value_size, forge);
+            std::cout << out << std::endl;
+
+
+        } else { // Unknown algo
+            std::ostringstream msg;
+            msg << "Unknown algorithm: " << algo << ", valid candidates are";
+            for( auto& kv : algorithms) {
+                msg << ", " << kv.first << " (" << kv.second << ")";
+            }
+            EXIT_ON_ERROR( Invalid_Argument, msg.str() );
         }
 
-        CLUTCHLOG(info, "Initial solution: " << sol);
-        auto hf = make_hashfuncs(sol, value_size, forge);
-        CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
+    } else { // parametrize == true
 
-        // std::clog << hf.forward.to_string() << std::endl;
-        // std::clog << hf.reverse.to_string() << std::endl;
-        CLUTCHLOG(note, "OK");
+        if( algo == "CMAES" ) {
+            std::vector<std::string> operators = split_in_vec(allowed_ops, ",");
+            size_t dim = operators.size();
+            size_t max_eval = 100;
 
-        CLUTCHLOG(progress, "Evaluate first signature...");
-        feval(sol);
-        CLUTCHLOG(note, "Initial signature: " << sol);
-        CLUTCHLOG(note, "OK");
+            using R = eoReal<eoMinimizingFitness>;
+            using CMA = edoNormalAdaptive<R>;
 
-        CLUTCHLOG(progress, "Solver run...");
-        search(sol);
-        CLUTCHLOG(note, "OK");
+            edoNormalAdaptive<R> gaussian(dim);
 
-        const std::string out = format_solution(sol, value_size, forge);
-        std::cout << out << std::endl;
+            eoState state;
+            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators);
+            auto& eval     = state.pack< eoEvalCounterThrowException<R> >(obj_func, max_eval);
+            auto& pop_eval = state.pack< eoPopLoopEval<R> >(eval);
 
+            // TODO get rid of do_make* stuff
+            auto& eo_continue  = do_make_continue(  argparser, state, eval);
+            auto& pop_continue = do_make_checkpoint(argparser, state, eval, eo_continue);
 
-    } else if( algo == "NSGA2" ) {
+            auto& best = state.pack< eoBestIndividualStat<R> >();
+            pop_continue.add( best );
+            auto& distrib_continue = state.pack< edoContAdaptiveFinite<CMA> >();
 
-        using ReVec = moeoRealVector<QualityAndRuntime>;
+            // FIXME implement constraints: different bounds for shifts and multiply + odd multipliers
+            double bmin = std::min(shift_min, mult_min);
+            double bmax = std::max(shift_max, mult_max);
+            auto& gen  = state.pack< eoUniformGenerator<R::AtomType> >(bmin, bmax);
+            auto& bounder   = state.pack< edoBounderRng<R> >(R(dim, bmin), R(dim, bmax), gen);
 
-        EvalMO<myuint,CombiMO> eval(value_size, forge);
-        eoPopLoopEval<CombiMO> popEval(eval);
+            auto& init = state.pack< eoInitFixedLength<R> >(dim, gen);
 
-        // Crossover
-        eoQuadCloneOp<CombiMO> xover; // TODO use a real crossover
+            auto& selector  = state.pack< eoRankMuSelect<R> >(dim/2);
+            auto& estimator = state.pack< edoEstimatorNormalAdaptive<R> >(gaussian);
 
-        // Mutation
-        using MutWrapper = eoRealToIntMonOp<CombiMO,ReVec>;
-        eoDetUniformMutation<ReVec> mutreal(/*range*/1.5, /*nb*/1); // TODO tune
-        eoIntInterval bounds(0,forge.size()-1);
-        MutWrapper mutation(mutreal, bounds);
+            auto& sampler   = state.pack< edoSamplerNormalAdaptive<R> >(bounder);
+            auto& replacor  = state.pack< eoCommaReplacement<R> >();
 
-        using InitWrapper = eoRealToIntInit<CombiMO,ReVec>;
-        eoRealVectorBounds rebounds(func_len, 0, forge.size()-1);
-        eoRealInitBounded<ReVec> initreal(rebounds);
-        InitWrapper init(initreal, bounds);
+            auto& algo = state.pack< edoAlgoAdaptive<CMA> >(
+                 gaussian , pop_eval, selector,
+                 estimator, sampler , replacor,
+                 pop_continue, distrib_continue);
 
-        eoQuadGenOp<CombiMO> genOp(xover);
-        eoSGATransform<CombiMO> transform(xover, 0.1, mutation, 0.1);
-        eoGenContinue<CombiMO> continuator(10);
+            CLUTCHLOG(progress, "Initialize population...");
+            // auto& pop = do_make_pop(argparser, state, init);
+            eoPop<R> pop;
+            pop.append(pop_size, init);
+            pop_eval(pop,pop);
+            CLUTCHLOG(note, "OK");
 
-        // build NSGA-II
-        moeoNSGAII<CombiMO> algo(20, eval, xover, 1.0, mutation, 1.0);
-        CLUTCHLOG(note, "OK");
+            CLUTCHLOG(progress, "Solver run...");
+            try {
+                algo(pop);
+            } catch (eoMaxEvalException& e) {
+                eo::log << eo::progress << "STOP" << std::endl;
+            }
+            CLUTCHLOG(note, "OK");
 
-        CLUTCHLOG(progress, "Initialize population...");
-        eoPop<CombiMO> pop(20, init);
-        CLUTCHLOG(note, "OK");
-
-        CLUTCHLOG(progress, "Solver run...");
-        algo(pop);
-        CLUTCHLOG(note, "OK");
-
-        auto sol = pop.best_element();
-
-        const std::string out = format_solution(sol, value_size, forge);
-        std::cout << out << std::endl;
-
-
-    } else {
-        std::ostringstream msg;
-        msg << "Unknown algorithm: " << algo << ", valid candidates are";
-        for( auto& kv : algorithms) {
-            msg << ", " << kv.first << " (" << kv.second << ")";
+        } else { // Unknown algo
+            std::ostringstream msg;
+            msg << "Unknown algorithm: " << algo << ", valid candidates are";
+            for( auto& kv : algorithms) {
+                msg << ", " << kv.first << " (" << kv.second << ")";
+            }
+            EXIT_ON_ERROR( Invalid_Argument, msg.str() );
         }
-        EXIT_ON_ERROR( Invalid_Argument, msg.str() );
     }
 }

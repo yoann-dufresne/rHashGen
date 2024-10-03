@@ -96,7 +96,7 @@ int main()
     using Min = eoMinimizingFitness;
     using Combi = moCombination<Min>;
 
-    eoForgeVector< EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
+    eoForgeVector< combi::EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
         forge.add< Multiply     <myuint> >( 9, value_size);
         forge.add< XorLeftShift <myuint> >(17, value_size);
         forge.add< XorLeftShift <myuint> >( 5, value_size);
@@ -119,7 +119,7 @@ int main()
     CLUTCHLOG(debug, "Solution: " << sol);
 
     CLUTCHLOG(note, "Evaluate");
-    EvalFull<myuint,Combi> eval(value_size, forge);
+    combi::EvalFull<myuint,Combi> eval(value_size, forge);
 
     eval(sol);
 

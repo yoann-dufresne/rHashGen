@@ -20,7 +20,7 @@ TEST(EvalFull, LargeNeighborhood)
     using Min = eoMinimizingFitness;
     using Combi = moCombination<Min>;
 
-    eoForgeVector< EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
+    eoForgeVector< combi::EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
         forge.add< Multiply     <myuint> >( 9, value_size);
         forge.add< XorLeftShift <myuint> >(17, value_size);
         forge.add< XorLeftShift <myuint> >( 5, value_size);
@@ -35,7 +35,7 @@ TEST(EvalFull, LargeNeighborhood)
     hood.init(sol, to); // {0,0}
     EXPECT_TRUE(hood.hasNeighbor(sol));
 
-    EvalFull<myuint,Combi> eval(value_size, forge);
+    combi::EvalFull<myuint,Combi> eval(value_size, forge);
 
     while( hood.cont(sol) ) {
         eval(sol);
