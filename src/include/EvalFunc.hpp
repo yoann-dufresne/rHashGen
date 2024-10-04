@@ -271,16 +271,19 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, const std:
         size_t param = static_cast<size_t>(std::round(sol[i]));
 
         if(operators[i] == "XorLeftShift") {
-            hff.add_operator(std::make_shared< XorLeftShift<myuint> >(param, value_size));
+            param = std::min(param, value_size-1);
             CLUTCHLOGD(xdebug, "XorLeftShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< XorLeftShift<myuint> >(param, value_size));
 
         } else if(operators[i] == "XorRightShift") {
-            hff.add_operator(std::make_shared< XorRightShift<myuint> >(param, value_size));
+            param = std::min(param, value_size-1);
             CLUTCHLOGD(xdebug, "XorRightShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< XorRightShift<myuint> >(param, value_size));
 
         } else if(operators[i] == "AddShift") {
-            hff.add_operator(std::make_shared< AddShift<myuint> >(param, value_size));
+            param = std::min(param, value_size-1);
             CLUTCHLOGD(xdebug, "AddShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< AddShift<myuint> >(param, value_size));
 
         } else if(operators[i] == "Multiply") {
             // Only odd multipliers are allowed.
@@ -291,8 +294,8 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, const std:
                     param += 1;
                 }
             }
-            hff.add_operator(std::make_shared< Multiply<myuint> >(param, value_size));
             CLUTCHLOGD(xdebug, "AddShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< Multiply<myuint> >(param, value_size));
 
         } else {
             std::ostringstream msg;
@@ -303,24 +306,28 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, const std:
     }
     CLUTCHLOG(xdebug, hff.size() << "/" << sol.size() << " operators");
     ASSERT(hff.size() == sol.size());
-    CLUTCHLOG(xdebug, "Incomplete hash function: " << hff.get_name());
+    CLUTCHLOG(xdebug, "Partial hash function: " << hff.get_name());
     hff.complete_with_masks();
     CLUTCHLOG(xdebug, "Complete hash function: " << hff.get_name());
 
     HashFunction<myuint> hfr{hff.invert()};
-    CLUTCHLOG(xdebug, "Inverted hash function: " << hfr.get_name());
+    CLUTCHLOG(xdebug, "Inverted hash function: " << hfr.get_shortname());
 
     #ifndef NDEBUG
-        // Set up the random number generator
-        std::random_device rd; // Obtain a random number from hardware
+        std::random_device rd;
         auto const seed{rd()};
-        std::mt19937 gen(seed); // Seed the generator
+        std::mt19937 gen(seed);
         std::uniform_int_distribution<myuint> value_dist(0, (1U << 31) - 1);
         for(size_t i=0; i<10; ++i) {
             myuint value = static_cast<myuint>(value_dist(gen));
             CLUTCHLOG(xdebug, "Check inversion on " << value);
-            myuint hashed {hff.apply(value)};
-            myuint recovered {hfr.apply(hashed)};
+            myuint hashed = hff.apply(value);
+            myuint recovered = hfr.apply(hashed);
+            if( value != recovered ) {
+                std::clog << hff.to_string() << std::endl;
+                std::clog << hfr.to_string() << std::endl;
+                CLUTCHLOG(error, value << " != " << recovered);
+            }
             ASSERT(value == recovered);
         }
     #endif
