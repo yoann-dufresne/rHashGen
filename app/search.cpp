@@ -243,14 +243,16 @@ int main(int argc, char* argv[])
 
     const size_t value_size = argparser.createParam<size_t>(31, "value-size",
         "Value size (in bits)", 'v', "Search domain").value();
+    ASSERT(value_size < sizeof(myuint)*CHAR_BIT);
 
     const size_t func_len = argparser.createParam<size_t>(3, "func-len",
         "Number of operations in the hash function", 'n', "Search domain").value();
 
     const size_t shift_min = argparser.createParam<size_t>(2, "shift-min",
         "Minimum number of shifts", 't', "Search domain").value();
-    const size_t shift_max = argparser.createParam<size_t>(31, "shift-max",
+    const size_t shift_max = argparser.createParam<size_t>(30, "shift-max",
         "Maximum number of shifts", 'T', "Search domain").value();
+    ASSERT(shift_max < value_size);
     const size_t shift_step = argparser.createParam<size_t>(1, "shift-step",
         "Increment step for number of shifts", 'i', "Search domain").value();
     Range shift_range(shift_min, shift_max, shift_step);
@@ -330,8 +332,8 @@ int main(int argc, char* argv[])
     if(shift_min == 0) {
         EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set `--shift-min` to zero.");
     }
-    if(shift_max < value_size) {
-        EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set --shift-max=" << shift_max << " < --value-size=" << value_size <<"");
+    if(shift_max >= value_size) {
+        EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set --shift-max=" << shift_max << " >= --value-size=" << value_size <<"");
     }
     if(mult_min < 3) {
         CLUTCHLOG(warning, "It is probably wrong that `--mult-min` is less than 3.");
@@ -477,7 +479,7 @@ int main(int argc, char* argv[])
         if( algo == "CMAES" ) {
             std::vector<std::string> operators = split_in_vec(allowed_ops, ",");
             size_t dim = operators.size();
-            size_t max_eval = 100;
+            size_t max_eval = 100000;
 
             using R = eoReal<eoMinimizingFitness>;
             using CMA = edoNormalAdaptive<R>;
@@ -520,16 +522,22 @@ int main(int argc, char* argv[])
             // auto& pop = do_make_pop(argparser, state, init);
             eoPop<R> pop;
             pop.append(pop_size, init);
-            pop_eval(pop,pop);
             CLUTCHLOG(note, "OK");
 
             CLUTCHLOG(progress, "Solver run...");
             try {
+                pop_eval(pop,pop);
                 algo(pop);
             } catch (eoMaxEvalException& e) {
                 eo::log << eo::progress << "STOP" << std::endl;
             }
             CLUTCHLOG(note, "OK");
+
+            auto sol = pop.best_element();
+
+            auto hf = param::make_hashfuncs<myuint,R>(sol, value_size, operators);
+            std::cout << format_hashfunc(hf) << std::endl;
+
 
         } else { // Unknown algo
             std::ostringstream msg;
