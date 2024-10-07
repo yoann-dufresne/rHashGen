@@ -40,9 +40,9 @@ public:
     {};
 
     //! Copy constructor.
-    HashFunction(HashFunction & other) :
+    HashFunction(const HashFunction & other) :
         m_function_name(other.m_function_name),
-        m_operators{std::move(other.m_operators)},
+        m_operators(other.m_operators),
         m_value_size(other.m_value_size)
     {};
 
@@ -56,6 +56,10 @@ public:
     }
 
     ~HashFunction() = default;
+
+    size_t get_value_size() const {
+        return m_value_size;
+    }
 
     /** Get the name of the hash function
      * @return The name of the hash function

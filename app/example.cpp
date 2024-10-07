@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "AvalancheTest.hpp"
 #include "HashFunction.hpp"
 #include "Operator.hpp"
 #include "XorLeftShift.hpp"
@@ -25,7 +26,7 @@ int main()
     log.threshold("XDebug");
 
     // The size of the values to manipulate is 57 bits.
-    size_t value_size{31};
+    size_t value_size{32};
     using myuint = uint32_t;
 
     CLUTCHLOG(progress, "Try HashFunc");
@@ -33,12 +34,11 @@ int main()
     HashFunction<myuint> hashFunc(value_size, "hash");
 
     // Add shift operators
-    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(9, value_size));
-    hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(17, value_size));
-    hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(5, value_size));
-    hashFunc.add_operator(std::make_unique<AddShift<myuint>>(19, value_size));
-    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(3, value_size));
-    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(9, value_size));
+    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(16, value_size));
+    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(0x7feb352dU, value_size));
+    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(15, value_size));
+    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(0x846ca68bU, value_size));
+    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(16, value_size));
 
     CLUTCHLOG(note, "Complete with masks");
     // Complete with masks if necessary
@@ -46,6 +46,21 @@ int main()
 
     // Print the string representation of the hash function
     std::cout << hashFunc.to_string() << std::endl;
+
+    // Evaluates the hash function
+    // SoftAvalancheTest<myuint> soft_test{hashFunc};
+    // CLUTCHLOG(progress, "Run SoftAvalancheTest");
+    // CLUTCHLOG(note, "    1 000 000 iterations:\t" << soft_test.run(value_size * 1000000UL));
+    // CLUTCHLOG(note, "   10 000 000 iterations:\t" << soft_test.run(value_size * 10000000UL));
+    // CLUTCHLOG(note, "  100 000 000 iterations:\t" << soft_test.run(value_size * 100000000UL));
+    // CLUTCHLOG(note, "1 000 000 000 iterations:\t" << soft_test.run(value_size * 1000000000UL));
+
+    StrictAvalancheTest<myuint> strict_test{hashFunc};
+    CLUTCHLOG(progress, "Run StrictAvalancheTest");
+    for (size_t i = 0; i < 10; i++)
+    {
+        CLUTCHLOG(note, "    10 0000 iterations:\t" << strict_test.run(value_size * 100000UL));
+    }
 
     CLUTCHLOG(note, "Invert");
     // Get the inverse function
