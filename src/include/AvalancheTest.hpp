@@ -126,18 +126,17 @@ public:
 
         // Xi² average test
         double mean {0};
-        double const expexted_diff {nb_tests / (nb_bits * 2.0)};
+        double const expected_diff {nb_tests / (nb_bits * 2.0)};
         for (size_t i{0} ; i<nb_bits ; i++)
         {
             for (size_t j{0} ; j<nb_bits ; j++)
             {
                 // std::cout << "[" << diff_matrix[i][j] << "]";
-                double const diff {(diff_matrix[i][j] - expexted_diff) / expexted_diff};
-                mean += (diff * diff) / (nb_bits * nb_bits);
+                double const diff {(diff_matrix[i][j] - expected_diff) / expected_diff};
+                mean += (diff * diff) / static_cast<double>(nb_bits * nb_bits);
             }
             // std::cout << std::endl;
         }
-
         
         // Return the percentage of bits that changed
         return sqrt(mean);
