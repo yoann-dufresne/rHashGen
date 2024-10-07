@@ -10,6 +10,11 @@
 #ifndef HASHFUNCTION_HPP
 #define HASHFUNCTION_HPP
 
+/** A sequence of hash operators.
+ *
+ * Allows to consolidate a sequence of feasible operators with masks,
+ * and compute the reverse hash function of a forward one.
+ */
 template <typename myuint>
 class HashFunction
 {
@@ -24,17 +29,24 @@ private:
     size_t m_value_size;
 
 public:
+    /** Explicit constructor.
+     *
+     * @param value_size The size (in bits) of the values to manipulate
+     * @param function_name Name given to the output code (if empty, uses a self-describing one)
+     */
     HashFunction(size_t value_size, std::string const & function_name = "") :
         m_function_name(function_name),
         m_value_size(value_size)
     {};
 
+    //! Copy constructor.
     HashFunction(HashFunction & other) :
         m_function_name(other.m_function_name),
         m_operators{std::move(other.m_operators)},
         m_value_size(other.m_value_size)
     {};
 
+    //! Assignement operator.
     HashFunction<myuint>& operator=(const HashFunction<myuint>& other)
     {
         this->m_function_name = other.m_function_name;
@@ -189,19 +201,11 @@ public:
         return ss.str();
     }
 
+    //! Returns the current number of operators in the sequence.
     size_t size() const {
         return m_operators.size();
     }
 
-};
-
-template <typename myuint>
-class HashFunctionPair
-{
-public:
-    HashFunctionPair( HashFunction<myuint> f, HashFunction<myuint> r ) : forward(f), reverse(r) {}
-    HashFunction<myuint> forward;
-    HashFunction<myuint> reverse;
 };
 
 #endif // HASHFUNCTION_HPP

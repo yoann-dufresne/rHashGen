@@ -1,8 +1,13 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
+#include <map>
+#include <iostream>
 
 #include <mo>
+#include <eo>
+#include <es.h>
+#include <moeo>
 
 #include "HashFunction.hpp"
 #include "Operator.hpp"
@@ -10,7 +15,6 @@
 #include "XorRightShift.hpp"
 #include "Multiply.hpp"
 #include "AddShift.hpp"
-#include "Masking.hpp"
 #include "Multiply.hpp"
 #include "moCombination.hpp"
 #include "moCombinationNeighbor.hpp"
@@ -19,10 +23,10 @@
 #include "log.h"
 
 using myuint = uint32_t;
+
 using Min = eoMinimizingFitness;
 using Combi = moCombination<Min>;
-using Nb = moCombinationNeighbor<Combi>;
-using NbHood = moCombinationNeighborhood<Combi>;
+using CombiMO = moeoIntVector<QualityAndRuntime>;
 
 //! Error codes returned on exit.
 enum class Error : unsigned char {
@@ -60,7 +64,7 @@ struct Range {
     size_t step;
 };
 
-void make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t value_size, Range shift_range, Range mult_range)
+void make_domain(eoForgeVector< Operator<myuint> >& forge, size_t value_size, Range shift_range, Range mult_range)
 {
     for(size_t i = shift_range.min; i < shift_range.max; i+=shift_range.step) {
         forge.add< XorLeftShift<myuint> >(i, value_size);
@@ -71,9 +75,6 @@ void make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t v
 
         forge.add< AddShift<myuint> >(i, value_size);
         CLUTCHLOG(xdebug, "AddShift << " << i);
-
-        forge.add< Masking<myuint> >(i);
-        CLUTCHLOG(xdebug, "Masking & " << i);
     }
 
     #ifndef NDEBUG
@@ -91,6 +92,73 @@ void make_domain(eoForgeVector< EvalFull<myuint,Combi>::OpItf >& forge, size_t v
     ASSERT(nb_multipliers > 0);
 }
 
+std::string format_hashfunc(HashFunctionPair<myuint>& hf, std::string indent = "    ")
+{
+    ASSERT(hf.forward.size() > 0);
+    ASSERT(hf.reverse.size() > 0);
+
+    std::ostringstream out;
+    out << "# YAML\n";
+    out << "rHashGen:\n";
+
+    std::string line;
+
+    out << indent << "forward: |" << indent.size() << "\n";
+    std::istringstream isf(hf.forward.to_string());
+    while( std::getline(isf, line)) {
+        out << indent << indent << line << "\n";
+    }
+
+    out << indent << "reverse: |" << indent.size() << "\n";
+    std::istringstream isr(hf.reverse.to_string());
+    while( std::getline(isr, line)) {
+        out << indent << indent << line << "\n";
+    }
+
+    return out.str();
+}
+
+std::string format_solution(const Combi& sol, const size_t value_size, eoForgeVector< Operator<myuint> >& forge, std::string indent = "    ")
+{
+    CLUTCHLOG(progress, "Optimized solution:");
+    CLUTCHLOG(note, sol );
+    auto hf = make_hashfuncs(sol, value_size, forge);
+
+    CLUTCHLOG(progress, "Output optimized hash function:");
+
+    std::ostringstream out;
+    out << format_hashfunc(hf, indent);
+
+    out << indent<< "solution: \"" << sol << "\"\n"
+        << indent<< "quality: " << sol.fitness() << "\n"
+        << "" << std::endl;
+
+    CLUTCHLOG(progress, "Done.");
+
+    return out.str();
+}
+
+std::string format_solution(const CombiMO& sol, const size_t value_size, eoForgeVector< Operator<myuint> >& forge, std::string indent = "    ")
+{
+    CLUTCHLOG(progress, "Optimized solution:");
+    CLUTCHLOG(note, sol );
+    auto hf = make_hashfuncs(sol, value_size, forge);
+
+    CLUTCHLOG(progress, "Output optimized hash function:");
+
+    std::ostringstream out;
+    out << format_hashfunc(hf, indent);
+
+    out << indent<< "solution: \"" << sol << "\"\n"
+        << indent<< "quality: " << sol.objectiveVector(0) << "\n"
+        << indent<< "runtime: " << sol.objectiveVector(1) << "\n"
+        << "" << std::endl;
+
+    CLUTCHLOG(progress, "Done.");
+
+    return out.str();
+}
+
 int main(int argc, char* argv[])
 {
     CLUTCHLOG(progress, "Set config...");
@@ -99,19 +167,19 @@ int main(int argc, char* argv[])
     /***** Classical arguments *****/
 
     const std::string log_level = argparser.createParam<std::string>("Progress", "log-level",
-        "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug, default=Progress)", 'l', "Logging").value();
+        "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)", 'l', "Logging").value();
 
     const std::string log_file = argparser.createParam<std::string>(".*", "log-file",
-        "Regexp indicating which source file is allowed logging (default=all)", 'f', "Logging").value();
+        "Regexp indicating which source file is allowed logging (use '.*' to allow all)", 'f', "Logging").value();
 
     const std::string log_func = argparser.createParam<std::string>(".*", "log-func",
-        "Regexp indicating which function is allowed logging (default=all)", 'F', "Logging").value();
+        "Regexp indicating which function is allowed logging (use '.*' to allow all)", 'F', "Logging").value();
 
-    const size_t log_depth = argparser.createParam<size_t>(9999, "log-depth",
-        "Maximum stack depth above which logging is not allowed (default=no limit)", 'D', "Logging").value();
+    const size_t log_depth = argparser.createParam<size_t>(std::numeric_limits<size_t>::max(), "log-depth",
+        "Maximum stack depth above which logging is not allowed (the larger, the more is displayed)", 'D', "Logging").value();
 
     unsigned long long seed = argparser.createParam<long>(0, "seed",
-        "Seed of the pseudo-random generator (0 = Epoch)", 's', "Parameters").value();
+        "Seed of the pseudo-random generator (0 = use number of seconds since The Epoch)", 's', "Parameters").value();
 
     /***** Search domain arguments *****/
 
@@ -137,7 +205,21 @@ int main(int argc, char* argv[])
         "Increment step for multipliers (note: only odd multipliers will be allowed)", 'u', "Search domain").value();
     Range mult_range(mult_min, mult_max, mult_step);
 
-    make_verbose(argparser);
+    /***** Search domain arguments *****/
+
+    std::map<std::string,std::string> algorithms;
+    algorithms["HC"] = "Hill-Climbing [mono-objective]";
+    algorithms["SA"] = "Simulated-Annealing [mono-objective]";
+    algorithms["NSGA2"] = "NSGAII [bi-objective]";
+    std::ostringstream msg; msg << " (";
+    for(auto& kv : algorithms) {
+        msg << kv.first << ":" << kv.second << ", ";
+    }
+    msg << ")";
+    const std::string algo = argparser.createParam<std::string>("HC", "algo",
+        "Search metaheuristic"+msg.str(), 'a', "Algorithm").value();
+
+    // make_verbose(argparser);
     make_help(argparser);
 
     clutchlog_config(); // common config
@@ -151,6 +233,7 @@ int main(int argc, char* argv[])
     if(seed == 0) {
         seed = std::time(nullptr); // Epoch
     }
+
     CLUTCHLOG(info, "seed       = " << seed);
     CLUTCHLOG(info, "log-level  = " << log_level);
     CLUTCHLOG(info, "log-file   = " << log_file);
@@ -181,7 +264,7 @@ int main(int argc, char* argv[])
     CLUTCHLOG(note, "OK");
 
     CLUTCHLOG(progress, "Create the search domain...");
-    eoForgeVector< EvalFull<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
+    eoForgeVector< Operator<myuint> > forge(/*always_reinstantiate*/true);
     make_domain(forge, value_size, shift_range, mult_range);
     CLUTCHLOG(info, forge.size() << " operators");
     ASSERT(forge.size() > 0);
@@ -189,59 +272,112 @@ int main(int argc, char* argv[])
 
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
-    EvalFull<myuint, Combi> feval(value_size, forge);
-    EvalTest<myuint, Combi> peval(feval);
 
-    NbHood neighborhood;
+    if( algo == "HC" or algo == "SA" ) {
 
-    // Continue search until exhaustion of the neighborhood.
-    moTrueContinuator<Nb> until_end;
-    moCheckpoint<Nb> check(until_end);
-    moBestFitnessStat<Combi> best;
-    check.add(best);    // Update the best state.
+        using Nb = moCombinationNeighbor<Combi>;
+        using NbHood = moCombinationNeighborhood<Combi>;
 
-    // Hill climber, selecting a random solution among the equal-best ones.
-    moRandomBestHC<Nb> search(neighborhood, feval, peval, check);
-    CLUTCHLOG(note, "OK");
+        EvalFull<myuint, Combi> feval(value_size, forge);
+        EvalTest<myuint, Combi> peval(feval);
 
-    CLUTCHLOG(progress, "Pick a random solution...");
-    std::vector<size_t> v;
-    v.reserve(func_len);
-    std::mt19937 rng(seed);
-    std::uniform_int_distribution<int> uni(0, forge.size()-1);
-    for(size_t i=0; i<func_len; ++i) {
-        v.push_back(uni(rng));
+        NbHood neighborhood;
+
+        // Continue search until exhaustion of the neighborhood.
+        moTrueContinuator<Nb> until_end;
+        moCheckpoint<Nb> check(until_end);
+        moBestFitnessStat<Combi> best;
+        check.add(best);    // Update the best state.
+
+        // Hill climber, selecting a random solution among the equal-best ones.
+        std::unique_ptr< moLocalSearch<Nb> > palgo;
+        if( algo == "HC" ) {
+            palgo = std::make_unique< moRandomBestHC<Nb> >(neighborhood, feval, peval, check);
+        } else if( algo == "SA" ) {
+            palgo = std::make_unique< moSA<Nb> >(neighborhood, feval, peval, check);
+        }
+        moLocalSearch<Nb>& search = *palgo;
+        CLUTCHLOG(note, "OK");
+
+        CLUTCHLOG(progress, "Pick a random solution...");
+        std::vector<size_t> v;
+        v.reserve(func_len);
+        std::mt19937 rng(seed);
+        std::uniform_int_distribution<int> uni(0, forge.size()-1);
+        for(size_t i=0; i<func_len; ++i) {
+            v.push_back(uni(rng));
+        }
+        Combi sol(v, forge.size());
+        CLUTCHLOG(info, "Initial solution: " << sol);
+        auto hf = make_hashfuncs(sol, value_size, forge);
+        CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
+
+        // std::clog << hf.forward.to_string() << std::endl;
+        // std::clog << hf.reverse.to_string() << std::endl;
+        CLUTCHLOG(note, "OK");
+
+        CLUTCHLOG(progress, "Evaluate first signature...");
+        feval(sol);
+        CLUTCHLOG(note, "Initial signature: " << sol);
+        CLUTCHLOG(note, "OK");
+
+        CLUTCHLOG(progress, "Solver run...");
+        search(sol);
+        CLUTCHLOG(note, "OK");
+
+        const std::string out = format_solution(sol, value_size, forge);
+        std::cout << out << std::endl;
+
+
+    } else if( algo == "NSGA2" ) {
+
+        using ReVec = moeoRealVector<QualityAndRuntime>;
+
+        EvalMO<myuint,CombiMO> eval(value_size, forge);
+        eoPopLoopEval<CombiMO> popEval(eval);
+
+        // Crossover
+        eoQuadCloneOp<CombiMO> xover; // TODO use a real crossover
+
+        // Mutation
+        using MutWrapper = eoRealToIntMonOp<CombiMO,ReVec>;
+        eoDetUniformMutation<ReVec> mutreal(/*range*/1.5, /*nb*/1); // TODO tune
+        eoIntInterval bounds(0,forge.size()-1);
+        MutWrapper mutation(mutreal, bounds);
+
+        using InitWrapper = eoRealToIntInit<CombiMO,ReVec>;
+        eoRealVectorBounds rebounds(func_len, 0, forge.size()-1);
+        eoRealInitBounded<ReVec> initreal(rebounds);
+        InitWrapper init(initreal, bounds);
+
+        eoQuadGenOp<CombiMO> genOp(xover);
+        eoSGATransform<CombiMO> transform(xover, 0.1, mutation, 0.1);
+        eoGenContinue<CombiMO> continuator(10);
+
+        // build NSGA-II
+        moeoNSGAII<CombiMO> algo(20, eval, xover, 1.0, mutation, 1.0);
+        CLUTCHLOG(note, "OK");
+
+        CLUTCHLOG(progress, "Initialize population...");
+        eoPop<CombiMO> pop(20, init);
+        CLUTCHLOG(note, "OK");
+
+        CLUTCHLOG(progress, "Solver run...");
+        algo(pop);
+        CLUTCHLOG(note, "OK");
+
+        auto sol = pop.best_element();
+
+        const std::string out = format_solution(sol, value_size, forge);
+        std::cout << out << std::endl;
+
+
+    } else {
+        std::ostringstream msg;
+        msg << "Unknown algorithm: " << algo << ", valid candidates are";
+        for( auto& kv : algorithms) {
+            msg << ", " << kv.first << " (" << kv.second << ")";
+        }
+        EXIT_ON_ERROR( Invalid_Argument, msg.str() );
     }
-    Combi sol(v, forge.size());
-    CLUTCHLOG(info, "Initial solution: " << sol);
-    auto hf = feval.make_hashfuncs(sol);
-    CLUTCHLOG(info, "Initial hash function: " << hf.forward.get_name() << " / " << hf.reverse.get_name());
-
-    hf = feval.make_hashfuncs(sol);
-    std::clog << hf.forward.to_string() << std::endl;
-    std::clog << hf.reverse.to_string() << std::endl;
-    CLUTCHLOG(note, "OK");
-
-    CLUTCHLOG(progress, "Evaluate first signature...");
-    feval(sol);
-    CLUTCHLOG(note, "Initial signature: " << sol);
-    CLUTCHLOG(note, "OK");
-
-    CLUTCHLOG(progress, "Solver run...");
-    search(sol);
-    CLUTCHLOG(note, "OK");
-
-    CLUTCHLOG(progress, "Optimized solution:");
-    CLUTCHLOG(note, sol );
-
-    CLUTCHLOG(progress, "Output optimized hash function:");
-    // Real output.
-    hf = feval.make_hashfuncs(sol);
-    ASSERT(hf.forward.size() > 0);
-    ASSERT(hf.reverse.size() > 0);
-
-    std::cout << hf.forward.to_string() << std::endl;
-    std::cout << hf.reverse.to_string() << std::endl;
-
-    CLUTCHLOG(progress, "Done.");
 }

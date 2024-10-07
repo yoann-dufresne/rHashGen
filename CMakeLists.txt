@@ -23,8 +23,6 @@ add_compile_options(-Wall -Wextra -pedantic)
 # Clang
 #add_compile_options( -Wno-c++98-compat-pedantic -Wno-old-style-cast -Wno-padded -Wno-extra-semi-stmt -Wno-weak-vtables)
 
-add_compile_definitions(-DWITH_CLUTCHLOG)
-
 if(BUILD_FOR_LOCAL)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 endif()
@@ -45,6 +43,7 @@ if(USE_LOCAL_PARADISEO)
     include_directories(${PARADISEO_ROOT})
     include_directories(${PARADISEO_ROOT}/eo/src)
     include_directories(${PARADISEO_ROOT}/mo/src)
+    include_directories(${PARADISEO_ROOT}/moeo/src)
     link_directories(${PARADISEO_BUILD}/lib)
 else()
     include_directories($ENV{PARADISEO_ROOT}/include/paradiseo/eo)
