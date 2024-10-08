@@ -23,7 +23,7 @@ int main()
 
     // The size of the values to manipulate is 57 bits.
     size_t value_size{32};
-    using myuint = uint32_t;
+    using myuint = uint64_t;
 
     CLUTCHLOG(progress, "Try HashFunc");
     // Create an instance of HashFunction with a value size of 64 bits
@@ -44,11 +44,13 @@ int main()
     std::cout << hashFunc.to_string() << std::endl;
 
     StrictAvalancheTest<myuint> strict_test{hashFunc};
-    CLUTCHLOG(progress, "Run SoftAvalancheTest");
-    for (size_t i = 0; i < 20; i++)
-    {
-        CLUTCHLOG(note, "     10 000 iterations:\t" << strict_test.run(value_size * 10000UL));
-    }
+    CLUTCHLOG(progress, "Run StrictAvalancheTest incrementaly");
+    // size_t const step_size {10000};
+    // for (size_t iteration = step_size; iteration <= 1000000000UL; iteration += step_size)
+    // {
+    //     CLUTCHLOG(note, "\t" << iteration << " iterations:\t" << strict_test.run(step_size));
+    // }
+    strict_test.run_exact_test();
 
     return 0;
 }
