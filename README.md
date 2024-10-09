@@ -12,22 +12,17 @@ git clone --recursive https://github.com/username/repo.git && cd repo
 mkdir build && cd build
 # Configure the build using CMake
 cmake ..
-# Compile an example binary
-make example
-# Compile the unit tests
-make rHashGen-tests
+# Compile the solver
+make search
+# See how to run the solver
+./search --help
 ```
 
-## Running the Binaries
+## Run tests
 
-To run the example and test binaries, use the following commands:
+To run the tests, use the following commands:
 
 ```bash
-# Run the example binary
-./example
-
-# Run the test binary
-make test
+mkdir -p build && cd build && cmake -CMAKE_BUILD_TYPE=Debug .. && make && make test
 ```
-
 

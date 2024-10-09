@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../../../../lib/libcma.a CMakeFiles/cma.dir/eig.cpp.o CMakeFiles/cma.dir/CMAState.cpp.o CMakeFiles/cma.dir/CMAParams.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib ../../../../../lib/libcma.a
