@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+.Rproj.user
+
+# Rproj and Maceries
+.DS_Store
+*.Rproj*
+**/.Rproj*
+
+# build
+build
