@@ -30,6 +30,8 @@ int main()
     HashFunction<myuint> hashFunc(value_size, "hash");
 
     // Add shift operators
+    // Should be [16 7feb352d 15 846ca68b 16] = 0.17353355999581582 * 10^-3
+    // Computed = 0.000173532 (2^32 iterations)
     hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(16, value_size));
     hashFunc.add_operator(std::make_unique<Multiply<myuint>>(0x7feb352dU, value_size));
     hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(15, value_size));
