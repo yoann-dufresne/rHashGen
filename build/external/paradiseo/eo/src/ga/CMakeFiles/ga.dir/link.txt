@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../../../../lib/libga.a CMakeFiles/ga.dir/make_algo_scalar_ga.cpp.o CMakeFiles/ga.dir/make_checkpoint_ga.cpp.o CMakeFiles/ga.dir/make_continue_ga.cpp.o CMakeFiles/ga.dir/make_genotype_ga.cpp.o CMakeFiles/ga.dir/make_op_ga.cpp.o CMakeFiles/ga.dir/make_pop_ga.cpp.o CMakeFiles/ga.dir/make_run_ga.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib ../../../../../lib/libga.a
