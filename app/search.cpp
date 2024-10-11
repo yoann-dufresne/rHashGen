@@ -334,6 +334,8 @@ int main(int argc, char* argv[])
     CLUTCHLOG(info, "mult-min   = " << mult_min);
     CLUTCHLOG(info, "mult-max   = " << mult_max);
     CLUTCHLOG(info, "mult-step  = " << mult_step);
+    CLUTCHLOG(info, "pop-size   = " << pop_size);
+    CLUTCHLOG(info, "nb-tests   = " << nb_tests);
 
     if(shift_min == 0) {
         EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set `--shift-min` to zero.");
@@ -530,6 +532,15 @@ int main(int argc, char* argv[])
             // auto& pop = do_make_pop(argparser, state, init);
             eoPop<R> pop;
             pop.append(pop_size, init);
+            R candidate;
+            if( init_sol ) {
+                CLUTCHLOG(progress, "Read solution from standard input...");
+                candidate.readFrom(std::cin);
+                CLUTCHLOG(info, "Read solution: " << candidate);
+                candidate.invalidate(); // Always invalidate, in case fitness input is wrong..
+                ASSERT(candidate.size() == func_len);
+                pop.push_back(candidate);
+            }
             CLUTCHLOG(note, "OK");
 
             CLUTCHLOG(progress, "Solver run...");
