@@ -219,7 +219,6 @@ std::vector<std::string> split_in_vec(std::string str, const std::string sep = "
 
 int main(int argc, char* argv[])
 {
-    CLUTCHLOG(progress, "Set config...");
     eoParser argparser(argc, argv);
 
     /***** Classical arguments *****/
@@ -235,6 +234,16 @@ int main(int argc, char* argv[])
 
     const size_t log_depth = argparser.createParam<size_t>(std::numeric_limits<size_t>::max(), "log-depth",
         "Maximum stack depth above which logging is not allowed (the larger, the more is displayed)", 'D', "Logging").value();
+
+
+    clutchlog_config(); // common config
+    auto& log = clutchlog::logger();
+    ASSERT(log.levels().contains(log_level));
+    log.threshold(log_level);
+    log.depth(log_depth);
+    log.file(log_file);
+    log.func(log_func);
+    CLUTCHLOG(progress, "Set config...");
 
     unsigned long long seed = argparser.createParam<long>(0, "seed",
         "Seed of the pseudo-random generator (0 = use number of seconds since The Epoch)", 's', "Parameters").value();
@@ -309,33 +318,33 @@ int main(int argc, char* argv[])
     // make_verbose(argparser);
     make_help(argparser);
 
-    clutchlog_config(); // common config
-    auto& log = clutchlog::logger();
-    ASSERT(log.levels().contains(log_level));
-    log.threshold(log_level);
-    log.depth(log_depth);
-    log.file(log_file);
-    log.func(log_func);
-
     if(seed == 0) {
         seed = std::time(nullptr); // Epoch
     }
 
-    CLUTCHLOG(info, "seed       = " << seed);
-    CLUTCHLOG(info, "log-level  = " << log_level);
-    CLUTCHLOG(info, "log-file   = " << log_file);
-    CLUTCHLOG(info, "log-func   = " << log_func);
-    CLUTCHLOG(info, "log-depth  = " << log_depth);
-    CLUTCHLOG(info, "value-size = " << value_size);
-    CLUTCHLOG(info, "func-len   = " << func_len);
-    CLUTCHLOG(info, "shift-min  = " << shift_min);
-    CLUTCHLOG(info, "shift-max  = " << shift_max);
-    CLUTCHLOG(info, "shift-step = " << shift_step);
-    CLUTCHLOG(info, "mult-min   = " << mult_min);
-    CLUTCHLOG(info, "mult-max   = " << mult_max);
-    CLUTCHLOG(info, "mult-step  = " << mult_step);
-    CLUTCHLOG(info, "pop-size   = " << pop_size);
-    CLUTCHLOG(info, "nb-tests   = " << nb_tests);
+    CLUTCHLOGD(info, "seed       = " << seed, 1);
+    CLUTCHLOGD(info, "log-level  = " << log_level, 1);
+    CLUTCHLOGD(info, "log-file   = " << log_file, 1);
+    CLUTCHLOGD(info, "log-func   = " << log_func, 1);
+    CLUTCHLOGD(info, "log-depth  = " << log_depth, 1);
+    CLUTCHLOGD(info, "value-size = " << value_size, 1);
+    CLUTCHLOGD(info, "func-len   = " << func_len, 1);
+    CLUTCHLOGD(info, "shift-min  = " << shift_min, 1);
+    CLUTCHLOGD(info, "shift-max  = " << shift_max, 1);
+    CLUTCHLOGD(info, "shift-step = " << shift_step, 1);
+    CLUTCHLOGD(info, "mult-min   = " << mult_min, 1);
+    CLUTCHLOGD(info, "mult-max   = " << mult_max, 1);
+    CLUTCHLOGD(info, "mult-step  = " << mult_step, 1);
+    CLUTCHLOGD(info, "parametrize= " << (parametrize? "ON" : "OFF"), 1);
+    CLUTCHCODE(info,
+        std::ostringstream msg;
+        for(auto op : split_in_vec(allowed_ops, ",")) {msg << " 𐙤 " << op;}
+        CLUTCHLOGD(info, "operators " << msg.str(), 1);
+    );
+    CLUTCHLOGD(info, "init-sol   = " << (init_sol? "ON" : "OFF"), 1);
+    CLUTCHLOGD(info, "algo       = " << algo, 1);
+    CLUTCHLOGD(info, "pop-size   = " << pop_size, 1);
+    CLUTCHLOGD(info, "nb-tests   = " << nb_tests, 1);
 
     if(shift_min == 0) {
         EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set `--shift-min` to zero.");
