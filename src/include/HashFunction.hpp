@@ -37,7 +37,9 @@ public:
     HashFunction(size_t value_size, std::string const & function_name = "") :
         m_function_name(function_name),
         m_value_size(value_size)
-    {};
+    {
+        assert(value_size < sizeof(myuint)*CHAR_BIT);
+    };
 
     //! Copy constructor.
     HashFunction(const HashFunction & other) :
@@ -67,23 +69,29 @@ public:
     std::string get_name() const
     {
         if(m_function_name.size() == 0) {
-            // Symbols from unicode codepages allowed in identifiers: 𓃊ㄍ𓉘𓉝𐙤
-            // Allows to copy-paste the name as a legit C++ function name
-            // while still being readable.
-            const std::string sep = "𐙤";
-            std::ostringstream os;
-            os << "hash𓐅" << m_operators.size() << "𓉘";
-            if(m_operators.size() > 0) {
-                os << m_operators[0]->to_short();
-                for(size_t i=1; i<m_operators.size(); ++i) {
-                    os << sep << m_operators[i]->to_short();
-                }
-            }
-            os << "𓉝";
-            return os.str();
+            return get_shortname();
         } else {
             return m_function_name;
         }
+    }
+
+    std::string get_shortname() const
+    {
+        // Symbols from unicode codepages allowed in identifiers: 𓃊ㄍ𓉘𓉝𐙤
+        // Allows to copy-paste the name as a legit C++ function name
+        // while still being readable.
+        const std::string sep = "𐙤";
+        std::ostringstream os;
+        os << "hash𓐅" << m_operators.size() << "𓉘";
+        if(m_operators.size() > 0) {
+            os << m_operators[0]->to_short();
+            for(size_t i=1; i<m_operators.size(); ++i) {
+                os << sep << m_operators[i]->to_short();
+            }
+        }
+        os << "𓉝";
+        return os.str();
+
     }
 
     /** Add an operator to the hash function
