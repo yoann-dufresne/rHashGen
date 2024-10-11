@@ -5,6 +5,7 @@
 #include <moeo>
 
 #include "log.h"
+#include "AvalancheTest.hpp"
 
 //! Structure to gather forward and reverse hash functions, as outputed by make_hashfuncs.
 template <typename myuint>
@@ -16,6 +17,7 @@ public:
     HashFunction<myuint> reverse;
 };
 
+
 /********************************************************************************/
 
 /** Combinatorial encoding
@@ -23,7 +25,6 @@ public:
  * i.e. A solution is a sequence of indices depending on a pre-pseudo-instantiated
  *      forge of operators.
  */
-
 namespace combi {
 
 /** Instantiate the forward and reverse HashFunc from the given solution.
@@ -80,6 +81,7 @@ public:
 protected:
     const size_t m_value_size;
     eoForgeVector<OpItf>& m_forge;
+    AvalancheTest<myuint>& m_test;
 
 public:
     /** Constructor
@@ -87,10 +89,13 @@ public:
      * @param value_size The size (in bits) of the values to manipulate
      * @param forge The set of possible parametrized hash operators.
      */
-    EvalFull(size_t value_size, eoForgeVector<OpItf>& forge) :
+    EvalFull(size_t value_size, eoForgeVector<OpItf>& forge, AvalancheTest<myuint>& test) :
         m_value_size(value_size),
-        m_forge(forge)
-    { }
+        m_forge(forge),
+        m_test(test)
+    {
+        ASSERT(value_size == test.get_value_size()); // FIXME we could use test.get_value_size()
+    }
 
     //! Call interface.
     virtual void operator()(EOT& sol) {
@@ -101,8 +106,9 @@ public:
         HashFunction<myuint> hff = hffr.forward;
         HashFunction<myuint> hfr = hffr.reverse;
 
-        // TODO: have a real objective function.
-        const double quality = hff.size() + hfr.size();
+        ASSERT(hff.get_value_size() == m_value_size);
+        const double quality = m_test(hff);
+        // NOTE: do we want to aggregate runtime as well?
 
         sol.fitness( quality );
         CLUTCHLOG(xdebug, "Evaluated solution: " << sol);
@@ -203,6 +209,7 @@ public:
 protected:
     const size_t m_value_size;
     eoForgeVector<OpItf>& m_forge;
+    AvalancheTest<myuint>& m_test;
 
 public:
     /** Constructor
@@ -210,10 +217,13 @@ public:
      * @param value_size The size (in bits) of the values to manipulate
      * @param forge The set of possible parametrized hash operators.
      */
-    EvalMO(size_t value_size, eoForgeVector<OpItf>& forge) :
+    EvalMO(size_t value_size, eoForgeVector<OpItf>& forge, AvalancheTest<myuint>& test) :
         m_value_size(value_size),
-        m_forge(forge)
-    { }
+        m_forge(forge),
+        m_test(test)
+    {
+        ASSERT(value_size == test.get_value_size()); // FIXME we could use test.get_value_size()
+    }
 
     //! Call interface.
     void operator()(MOEOT& sol)
@@ -225,8 +235,8 @@ public:
         HashFunction<myuint> hff = hffr.forward;
         HashFunction<myuint> hfr = hffr.reverse;
 
-        // TODO: have a real objective function.
-        const QualityAndRuntime::Type quality = hff.size() * hfr.size();
+        ASSERT(hff.get_value_size() == m_value_size);
+        const QualityAndRuntime::Type quality = m_test(hff);
         const QualityAndRuntime::Type runtime = hff.size() + hfr.size();
 
         sol.objectiveVector(0, quality );
@@ -345,6 +355,7 @@ public:
 protected:
     const size_t m_value_size;
     const std::vector<std::string> m_operators;
+    AvalancheTest<myuint>& m_test;
 
 public:
     /** Constructor
@@ -352,9 +363,10 @@ public:
      * @param value_size The size (in bits) of the values to manipulate
      * @param operators The sequence of operator names to be parametrized.
      */
-    EvalFull(size_t value_size, const std::vector<std::string>& operators) :
+    EvalFull(size_t value_size, const std::vector<std::string>& operators, AvalancheTest<myuint>& test) :
         m_value_size(value_size),
-        m_operators(operators)
+        m_operators(operators),
+        m_test(test)
     { }
 
     //! Call interface.
@@ -366,8 +378,9 @@ public:
         HashFunction<myuint> hff = hffr.forward;
         HashFunction<myuint> hfr = hffr.reverse;
 
-        // TODO: have a real objective function.
-        const double quality = hff.size() + hfr.size();
+        ASSERT(hff.get_value_size() == m_value_size);
+        const double quality = m_test(hff);
+        // NOTE: do we want to aggregate runtime as well?
 
         sol.fitness( quality );
         CLUTCHLOG(xdebug, "Evaluated solution: " << sol);

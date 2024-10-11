@@ -34,7 +34,8 @@ TEST(EvalMO, LargeNeighborhood)
 
     Combi sol(length, 0);
 
-    combi::EvalMO<myuint,Combi> eval(value_size, forge);
+    StrictAvalancheTest<myuint> test(value_size, /*nb_tests*/100);
+    combi::EvalMO<myuint,Combi> eval(value_size, forge, test);
 
     using MutWrapper = eoRealToIntMonOp<Combi, moeoRealVector<combi::QualityAndRuntime>>;
     eoDetUniformMutation< typename MutWrapper::EOTreal > mutreal(/*range*/forge.size(), /*nb*/length);

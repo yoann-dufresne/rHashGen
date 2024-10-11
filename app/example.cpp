@@ -50,29 +50,29 @@ int main()
     // Evaluates the hash function
     // SoftAvalancheTest<myuint> soft_test{hashFunc};
     // CLUTCHLOG(progress, "Run SoftAvalancheTest");
-    // CLUTCHLOG(note, "    1 000 000 iterations:\t" << soft_test.run(value_size * 1000000UL));
-    // CLUTCHLOG(note, "   10 000 000 iterations:\t" << soft_test.run(value_size * 10000000UL));
-    // CLUTCHLOG(note, "  100 000 000 iterations:\t" << soft_test.run(value_size * 100000000UL));
-    // CLUTCHLOG(note, "1 000 000 000 iterations:\t" << soft_test.run(value_size * 1000000000UL));
+    // CLUTCHLOG(note, "    1 000 000 iterations:\t" << soft_test(hashFunc, value_size * 1000000UL));
+    // CLUTCHLOG(note, "   10 000 000 iterations:\t" << soft_test(hashFunc, value_size * 10000000UL));
+    // CLUTCHLOG(note, "  100 000 000 iterations:\t" << soft_test(hashFunc, value_size * 100000000UL));
+    // CLUTCHLOG(note, "1 000 000 000 iterations:\t" << soft_test(hashFunc, value_size * 1000000000UL));
 
-    StrictAvalancheTest<myuint> strict_test{hashFunc};
+    StrictAvalancheTest<myuint> strict_test{hashFunc.get_value_size()};
     CLUTCHLOG(progress, "Run SoftAvalancheTest");
     for (size_t i = 0; i < 20; i++)
     {
-        CLUTCHLOG(note, "     10 000 iterations:\t" << strict_test.run(value_size * 10000UL));
+        CLUTCHLOG(note, "     10 000 iterations:\t" << strict_test(hashFunc, value_size * 10000UL));
     }
     std::cout << std::endl;
     for (size_t i = 0; i < 20; i++)
     {
-        CLUTCHLOG(note, "    100 000 iterations:\t" << strict_test.run(value_size * 100000UL));
+        CLUTCHLOG(note, "    100 000 iterations:\t" << strict_test(hashFunc, value_size * 100000UL));
     }
     std::cout << std::endl;
     std::cout << std::endl;
     for (size_t i = 0; i < 20; i++)
     {
-        CLUTCHLOG(note, "  1 000 000 iterations:\t" << strict_test.run(value_size * 1000000UL));
+        CLUTCHLOG(note, "  1 000 000 iterations:\t" << strict_test(hashFunc, value_size * 1000000UL));
     }
-    CLUTCHLOG(note, "100 000 000 iterations:\t" << strict_test.run(value_size * 100000000UL));
+    CLUTCHLOG(note, "100 000 000 iterations:\t" << strict_test(hashFunc, value_size * 100000000UL));
 
     CLUTCHLOG(note, "Invert");
     // Get the inverse function
@@ -119,7 +119,7 @@ int main()
     CLUTCHLOG(debug, "Solution: " << sol);
 
     CLUTCHLOG(note, "Evaluate");
-    combi::EvalFull<myuint,Combi> eval(value_size, forge);
+    combi::EvalFull<myuint,Combi> eval(value_size, forge, strict_test);
 
     eval(sol);
 

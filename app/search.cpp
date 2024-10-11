@@ -300,6 +300,12 @@ int main(int argc, char* argv[])
     const size_t pop_size = argparser.createParam<size_t>(100, "pop-size",
         "Population size for evolutionary algorithms", 'p', "Algorithm").value();
 
+    /***** Objective Functions arguments *****/
+
+    const size_t nb_tests = argparser.createParam<size_t>(1000, "nb-tests",
+        "Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)", 'x', "Objective Functions").value();
+
+
     // make_verbose(argparser);
     make_help(argparser);
 
@@ -353,13 +359,15 @@ int main(int argc, char* argv[])
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
 
+    StrictAvalancheTest<myuint> test(value_size, /*nb_tests*/nb_tests);
+
     if( not parametrize ) {
         if( algo == "HC" or algo == "SA" ) {
 
             using Nb = moCombinationNeighbor<Combi>;
             using NbHood = moCombinationNeighborhood<Combi>;
 
-            combi::EvalFull<myuint, Combi> feval(value_size, forge);
+            combi::EvalFull<myuint, Combi> feval(value_size, forge, test);
             combi::EvalTest<myuint, Combi> peval(feval);
 
             NbHood neighborhood;
@@ -426,7 +434,7 @@ int main(int argc, char* argv[])
 
             using ReVec = moeoRealVector<combi::QualityAndRuntime>;
 
-            combi::EvalMO<myuint,CombiMO> eval(value_size, forge);
+            combi::EvalMO<myuint,CombiMO> eval(value_size, forge, test);
             eoPopLoopEval<CombiMO> popEval(eval);
 
             // Crossover
@@ -487,7 +495,7 @@ int main(int argc, char* argv[])
             edoNormalAdaptive<R> gaussian(dim);
 
             eoState state;
-            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators);
+            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators, test);
             auto& eval     = state.pack< eoEvalCounterThrowException<R> >(obj_func, max_eval);
             auto& pop_eval = state.pack< eoPopLoopEval<R> >(eval);
 
@@ -529,7 +537,7 @@ int main(int argc, char* argv[])
                 pop_eval(pop,pop);
                 algo(pop);
             } catch (eoMaxEvalException& e) {
-                eo::log << eo::progress << "STOP" << std::endl;
+                CLUTCHLOG(progress, "STOP, reached max number of evaluations");
             }
             CLUTCHLOG(note, "OK");
 

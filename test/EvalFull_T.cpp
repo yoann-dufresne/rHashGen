@@ -35,7 +35,8 @@ TEST(EvalFull, LargeNeighborhood)
     hood.init(sol, to); // {0,0}
     EXPECT_TRUE(hood.hasNeighbor(sol));
 
-    combi::EvalFull<myuint,Combi> eval(value_size, forge);
+    StrictAvalancheTest<myuint> test(value_size, /*nb_tests*/100);
+    combi::EvalFull<myuint,Combi> eval(value_size, forge, test);
 
     while( hood.cont(sol) ) {
         eval(sol);
