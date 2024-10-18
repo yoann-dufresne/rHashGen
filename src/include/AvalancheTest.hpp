@@ -104,6 +104,8 @@ public:
      */
     double operator()(size_t nb_tests = 0)
     {
+        assert(this->m_hash_function_ptr != nullptr);
+        
         if(nb_tests == 0) {nb_tests = this->default_nb_tests;}
 
         for (myuint val{std::numeric_limits<myuint>::min()} ; ; val++)
@@ -161,6 +163,8 @@ public:
      */
     double operator()(size_t nb_tests = 0)
     {
+        assert(this->m_hash_function_ptr != nullptr);
+
         if(nb_tests == 0) {nb_tests = this->default_nb_tests;}
 
         for (size_t i{0} ; i<nb_tests ; i++)
