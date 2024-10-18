@@ -22,9 +22,9 @@ TEST(EvalMO, LargeNeighborhood)
     const size_t length = 5;
     const size_t value_size = 31;
     using myuint = uint32_t;
-    using Combi = moeoIntVector<QualityAndRuntime>;
+    using Combi = moeoIntVector<combi::QualityAndRuntime>;
 
-    eoForgeVector< EvalMO<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
+    eoForgeVector< combi::EvalMO<myuint,Combi>::OpItf > forge(/*always_reinstantiate*/true);
         forge.add< Multiply     <myuint> >( 9, value_size);
         forge.add< XorLeftShift <myuint> >(17, value_size);
         forge.add< XorLeftShift <myuint> >( 5, value_size);
@@ -34,9 +34,10 @@ TEST(EvalMO, LargeNeighborhood)
 
     Combi sol(length, 0);
 
-    EvalMO<myuint,Combi> eval(value_size, forge);
+    SamplingAvalancheTest<myuint> test(value_size, /*nb_tests*/100);
+    combi::EvalMO<myuint,Combi> eval(value_size, forge, test);
 
-    using MutWrapper = eoRealToIntMonOp<Combi, moeoRealVector<QualityAndRuntime>>;
+    using MutWrapper = eoRealToIntMonOp<Combi, moeoRealVector<combi::QualityAndRuntime>>;
     eoDetUniformMutation< typename MutWrapper::EOTreal > mutreal(/*range*/forge.size(), /*nb*/length);
     eoIntInterval bounds(0,forge.size()-1);
     MutWrapper mutint(mutreal, bounds);

@@ -5,6 +5,7 @@
 #include <moeo>
 
 #include "log.h"
+#include "AvalancheTest.hpp"
 
 //! Structure to gather forward and reverse hash functions, as outputed by make_hashfuncs.
 template <typename myuint>
@@ -15,6 +16,16 @@ public:
     HashFunction<myuint> forward;
     HashFunction<myuint> reverse;
 };
+
+
+/********************************************************************************/
+
+/** Combinatorial encoding
+ *
+ * i.e. A solution is a sequence of indices depending on a pre-pseudo-instantiated
+ *      forge of operators.
+ */
+namespace combi {
 
 /** Instantiate the forward and reverse HashFunc from the given solution.
  *
@@ -59,6 +70,7 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, eoForgeVec
     return HashFunctionPair<myuint>(hff, hfr);
 }
 
+
 //! Evaluates a mono-objective solution from scratch.
 template<typename myuint, typename EOT>
 class EvalFull : public eoEvalFunc< EOT >
@@ -69,6 +81,7 @@ public:
 protected:
     const size_t m_value_size;
     eoForgeVector<OpItf>& m_forge;
+    AvalancheTest<myuint>& m_test;
 
 public:
     /** Constructor
@@ -76,22 +89,27 @@ public:
      * @param value_size The size (in bits) of the values to manipulate
      * @param forge The set of possible parametrized hash operators.
      */
-    EvalFull(size_t value_size, eoForgeVector<OpItf>& forge) :
+    EvalFull(size_t value_size, eoForgeVector<OpItf>& forge, AvalancheTest<myuint>& test) :
         m_value_size(value_size),
-        m_forge(forge)
-    { }
+        m_forge(forge),
+        m_test(test)
+    {
+        ASSERT(value_size == test.get_value_size()); // FIXME we could use test.get_value_size()
+    }
 
     //! Call interface.
     virtual void operator()(EOT& sol) {
         CLUTCHLOG(xdebug, "Evaluate solution: " << sol);
 
-        auto hffr = make_hashfuncs(sol, m_value_size, m_forge);
+        auto hffr = make_hashfuncs<myuint,EOT>(sol, m_value_size, m_forge);
 
         HashFunction<myuint> hff = hffr.forward;
         HashFunction<myuint> hfr = hffr.reverse;
 
-        // TODO: have a real objective function.
-        const double quality = hff.size() + hfr.size();
+        ASSERT(hff.get_value_size() == m_value_size);
+        m_test.set_hash_function(hff);
+        const double quality = m_test();
+        // NOTE: do we want to aggregate runtime as well?
 
         sol.fitness( quality );
         CLUTCHLOG(xdebug, "Evaluated solution: " << sol);
@@ -192,6 +210,7 @@ public:
 protected:
     const size_t m_value_size;
     eoForgeVector<OpItf>& m_forge;
+    AvalancheTest<myuint>& m_test;
 
 public:
     /** Constructor
@@ -199,23 +218,27 @@ public:
      * @param value_size The size (in bits) of the values to manipulate
      * @param forge The set of possible parametrized hash operators.
      */
-    EvalMO(size_t value_size, eoForgeVector<OpItf>& forge) :
+    EvalMO(size_t value_size, eoForgeVector<OpItf>& forge, AvalancheTest<myuint>& test) :
         m_value_size(value_size),
-        m_forge(forge)
-    { }
+        m_forge(forge),
+        m_test(test)
+    {
+        ASSERT(value_size == test.get_value_size()); // FIXME we could use test.get_value_size()
+    }
 
     //! Call interface.
     void operator()(MOEOT& sol)
     {
         CLUTCHLOG(xdebug, "Evaluate solution: " << sol);
 
-        auto hffr = make_hashfuncs(sol, m_value_size, m_forge);
+        auto hffr = make_hashfuncs<myuint,MOEOT>(sol, m_value_size, m_forge);
 
         HashFunction<myuint> hff = hffr.forward;
         HashFunction<myuint> hfr = hffr.reverse;
 
-        // TODO: have a real objective function.
-        const QualityAndRuntime::Type quality = hff.size() * hfr.size();
+        ASSERT(hff.get_value_size() == m_value_size);
+        m_test.set_hash_function(hff);
+        const QualityAndRuntime::Type quality = m_test();
         const QualityAndRuntime::Type runtime = hff.size() + hfr.size();
 
         sol.objectiveVector(0, quality );
@@ -227,5 +250,150 @@ public:
     }
 };
 
+} // namespace comb
+
+
+/********************************************************************************/
+
+/** Parametrization encoding
+ *
+ * i.e. A solution is a sequence of parameter values,
+ *      depending on a sequence of operators fixed at initialization.
+ */
+namespace param {
+
+/** Instantiate the forward and reverse HashFunc from the given solution.
+ *
+ * @param sol the Paradiseo solution representing a hash function (i.e. a sequence of indices)
+ * @param value_size The size (in bits) of the values to manipulate
+ * @param operators The sequence of operators types that forms the hash func to parametrize.
+ */
+template<typename myuint, typename EOT>
+HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, const std::vector<std::string>& operators )
+{
+    ASSERT(sol.size() > 0);
+    ASSERT(sol.size() == operators.size());
+
+    HashFunction<myuint> hff(value_size);
+
+    CLUTCHLOG(xdebug, "Instantiate " << sol.size() << " operators:");
+    for(size_t i = 0; i < sol.size(); ++i) {
+        // CLUTCHLOG(xdebug, "Instantiate " << i << "th operator");
+
+        size_t param = static_cast<size_t>(std::round(sol[i]));
+
+        if(operators[i] == "XorLeftShift") {
+            param = std::min(param, value_size-1);
+            CLUTCHLOGD(xdebug, "XorLeftShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< XorLeftShift<myuint> >(param, value_size));
+
+        } else if(operators[i] == "XorRightShift") {
+            param = std::min(param, value_size-1);
+            CLUTCHLOGD(xdebug, "XorRightShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< XorRightShift<myuint> >(param, value_size));
+
+        } else if(operators[i] == "AddShift") {
+            param = std::min(param, value_size-1);
+            CLUTCHLOGD(xdebug, "AddShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< AddShift<myuint> >(param, value_size));
+
+        } else if(operators[i] == "Multiply") {
+            // Only odd multipliers are allowed.
+            if(param % 2 == 0) { // if even
+                if(param < sol[i]) {
+                    param -= 1;
+                } else {
+                    param += 1;
+                }
+            }
+            CLUTCHLOGD(xdebug, "AddShift << " << param << "(" << sol[i] << ")", 1);
+            hff.add_operator(std::make_shared< Multiply<myuint> >(param, value_size));
+
+        } else {
+            std::ostringstream msg;
+            msg << "Unknown operator: " << operators[i];
+            CLUTCHLOG(error, msg.str());
+            throw std::runtime_error(msg.str());
+        }
+    }
+    CLUTCHLOG(xdebug, hff.size() << "/" << sol.size() << " operators");
+    ASSERT(hff.size() == sol.size());
+    CLUTCHLOG(xdebug, "Partial hash function: " << hff.get_name());
+    hff.complete_with_masks();
+    CLUTCHLOG(xdebug, "Complete hash function: " << hff.get_name());
+
+    HashFunction<myuint> hfr{hff.invert()};
+    CLUTCHLOG(xdebug, "Inverted hash function: " << hfr.get_shortname());
+
+    #ifndef NDEBUG
+        std::random_device rd;
+        auto const seed{rd()};
+        std::mt19937 gen(seed);
+        std::uniform_int_distribution<myuint> value_dist(0, (1U << 31) - 1);
+        for(size_t i=0; i<10; ++i) {
+            myuint value = static_cast<myuint>(value_dist(gen));
+            CLUTCHLOG(xdebug, "Check inversion on " << value);
+            myuint hashed = hff.apply(value);
+            myuint recovered = hfr.apply(hashed);
+            if( value != recovered ) {
+                std::clog << hff.to_string() << std::endl;
+                std::clog << hfr.to_string() << std::endl;
+                CLUTCHLOG(error, value << " != " << recovered);
+            }
+            ASSERT(value == recovered);
+        }
+    #endif
+
+    return HashFunctionPair<myuint>(hff, hfr);
+}
+
+//! Evaluates a mono-objective solution from scratch.
+template<typename myuint, typename EOT>
+class EvalFull : public eoEvalFunc< EOT >
+{
+public:
+    using OpItf = Operator<myuint>;
+
+protected:
+    const size_t m_value_size;
+    const std::vector<std::string> m_operators;
+    AvalancheTest<myuint>& m_test;
+
+public:
+    /** Constructor
+     *
+     * @param value_size The size (in bits) of the values to manipulate
+     * @param operators The sequence of operator names to be parametrized.
+     */
+    EvalFull(size_t value_size, const std::vector<std::string>& operators, AvalancheTest<myuint>& test) :
+        m_value_size(value_size),
+        m_operators(operators),
+        m_test(test)
+    { }
+
+    //! Call interface.
+    virtual void operator()(EOT& sol) {
+        CLUTCHLOG(xdebug, "Evaluate solution: " << sol);
+
+        auto hffr = make_hashfuncs<myuint,EOT>(sol, m_value_size, m_operators);
+
+        HashFunction<myuint> hff = hffr.forward;
+        HashFunction<myuint> hfr = hffr.reverse;
+
+        ASSERT(hff.get_value_size() == m_value_size);
+        m_test.set_hash_function(hff);
+        const double quality = m_test();
+        // NOTE: do we want to aggregate runtime as well?
+
+        sol.fitness( quality );
+        CLUTCHLOG(xdebug, "Evaluated solution: " << sol);
+        CLUTCHLOG(xdebug, "Evaluated hash function: " << hff.get_name());
+
+        ASSERT(not sol.invalid());
+    }
+
+};
+
+} // namespace param
 
 #endif // EVALFUNC_HPP

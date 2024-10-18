@@ -20,7 +20,11 @@ private:
     size_t m_value_size;
 
 public:
-    XorRightShift(size_t shifts, size_t value_size) : m_shifts(shifts), m_value_size(value_size) {}
+    XorRightShift(size_t shifts, size_t value_size) : m_shifts(shifts), m_value_size(value_size)
+    {
+        assert(shifts < value_size);
+    }
+
     XorRightShift(XorRightShift const & other) : XorRightShift(other.m_shifts, other.m_value_size) {}
     ~XorRightShift() {}
 
