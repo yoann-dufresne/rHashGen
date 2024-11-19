@@ -1,6 +1,7 @@
 #include <random>
 #include "HashFunction.hpp"
 #include <array>
+#include <cmath>
 
 #ifndef AVALANCHE_HPP
 #define AVALANCHE_HPP
@@ -82,6 +83,18 @@ public:
         // Return the percentage of bits that changed
         return sqrt(mean);
     }
+
+    void print_matrix(std::ostream& os)
+    {
+        for (size_t i{0} ; i<m_value_size ; i++)
+        {
+            for (size_t j{0} ; j<m_value_size ; j++)
+            {
+                os << "[" << m_diff_matrix[i][j] << "]";
+            }
+            os << std::endl;
+        }
+    }
 };
 
 
@@ -133,7 +146,7 @@ public:
             }
 
             // Stop when we reach the maximum value
-            if (val == std::numeric_limits<myuint>::max())
+            if (val == std::numeric_limits<myuint>::max() or std::log2(val) >= this->m_value_size)
                 break;
         }
 

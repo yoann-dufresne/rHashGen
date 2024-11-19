@@ -24,9 +24,10 @@ int main()
     // Max size will be 63 bits (1 more bit needed for mult).
     using myuint = uint64_t;
     
+    // --- Preparation to file reading ---
 
-    CLUTCHLOG(progress, "Load the hash function from file");
-    std::string hash_file {"data/hash_loading.txt"};
+    CLUTCHLOG(progress, "Open hash functions file");
+    std::string hash_file {"../data/hash_loading.txt"};
     // Open the file containing the hash functions that we want to test
     std::ifstream file(hash_file);
     if (!file.is_open())
@@ -42,35 +43,89 @@ int main()
         std::getline(file, line);
     }
 
-    // Create an instance of HashFunction with a value size of 64 bits
-    size_t value_size{32};
-    HashFunction<myuint> hashFunc(value_size, "hash");
+    size_t num_functions {std::stoul(line)};
+    if (num_functions == 0)
+    {
+        CLUTCHLOG(critical, "No hash function to test in the file " << hash_file);
+        return 1;
+    }
+    CLUTCHLOG(note, num_functions << " hash functions will be tested");
 
-    // Add shift operators
-    // Should be [16 7feb352d 15 846ca68b 16] = 0.17353355999581582 * 10^-3
-    // Computed = 0.000173532 (2^32 iterations)
-    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(16, value_size));
-    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(0x7feb352dU, value_size));
-    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(15, value_size));
-    hashFunc.add_operator(std::make_unique<Multiply<myuint>>(0x846ca68bU, value_size));
-    hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(16, value_size));
+    // --- Hash function testing ---
+    for (size_t idx{0} ; idx < num_functions ; idx++)
+    {
+        // Read until we find a line that is not a comment or a spacer
+        line = "";
+        while (line.size() == 0 or line[0] == '#')
+        {
+            std::getline(file, line);
+        }
 
-    CLUTCHLOG(note, "Complete with masks");
-    // Complete with masks if necessary
-    hashFunc.complete_with_masks();
+        // Get the parameters from the line. Format is:  num_bits num_operators operator1 param1 [... operatorN paramN]
+        std::istringstream iss{line};
+        size_t num_bits, num_operators;
+        iss >> num_bits;
+        iss >> num_operators;
+        if (num_bits == 0)
+        {
+            CLUTCHLOG(critical, "The number of bits for the hash function is 0");
+            return 1;
+        }
+        if (num_operators == 0)
+        {
+            CLUTCHLOG(critical, "The hash function declare 0 operators");
+            return 1;
+        }
 
-    // Print the string representation of the hash function
-    std::cout << hashFunc.to_string() << std::endl;
+        // Create an instance of HashFunction with the number of bits
+        HashFunction<myuint> hashFunc(num_bits, "hash");
+        FullAvalancheTest<myuint> full_test{num_bits};
 
-    FullAvalancheTest<myuint> full_test{value_size};
-    full_test.set_hash_function(hashFunc);
-    CLUTCHLOG(progress, "Run StrictAvalancheTest incrementaly");
-    // size_t const step_size {10000};
-    // for (size_t iteration = step_size; iteration <= 1000000000UL; iteration += step_size)
-    // {
-    //     CLUTCHLOG(note, "\t" << iteration << " iterations:\t" << strict_test.run(step_size));
-    // }
-    std::cout << "Test completed " << full_test() << std::endl;
+        // Read and add the operators to the hash function
+        for (size_t op_idx{0} ; op_idx<num_operators ; op_idx++)
+        {
+            // Read the type and parameter of the operator
+            std::string op_name;
+            iss >> op_name;
+            uint64_t param;
+            iss >> param;
+
+            // Instanciate the operator
+            if (op_name == "XSR")
+            {
+                hashFunc.add_operator(std::make_unique<XorRightShift<myuint>>(param, num_bits));
+            }
+            else if (op_name == "XSL")
+            {
+                hashFunc.add_operator(std::make_unique<XorLeftShift<myuint>>(param, num_bits));
+            }
+            else if (op_name == "MUL")
+            {
+                hashFunc.add_operator(std::make_unique<Multiply<myuint>>(param, num_bits));
+            }
+            else if (op_name == "ASL")
+            {
+                hashFunc.add_operator(std::make_unique<AddShift<myuint>>(param, num_bits));
+            }
+            else
+            {
+                CLUTCHLOG(critical, "Unknown operator: " << op_name);
+                return 1;
+            }
+        }
+        // Complete the function with masks
+        hashFunc.complete_with_masks();
+
+        // Print the string representation of the hash function
+        std::cout << hashFunc.to_string() << std::endl;
+
+        // Run the full avalanche test
+        full_test.set_hash_function(hashFunc);
+        std::cout << "Test completed " << full_test() << std::endl;
+
+        // Print the matrix of the test
+        full_test.print_matrix(std::cout);
+    }
 
     return 0;
 }

@@ -21,69 +21,6 @@
 */
 
 
-// Forward declarations
-
-class CombinationIterator
-{
-public:
-    CombinationIterator(const std::vector<std::string>& list, int size);
-    CombinationIterator begin();
-    CombinationIterator end();
-    CombinationIterator& operator++();
-    bool operator!=(const CombinationIterator& other) const;
-    std::vector<std::string> operator*() const;    
-};
-
-
-int main(size_t argc, char* argv[])
-{
-    eoParser argparser(argc, argv);
-
-    /***** Classical arguments *****/
-
-    const std::string log_level = argparser.createParam<std::string>("Progress", "log-level",
-        "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)", 'l', "Logging").value();
-
-    const std::string log_file = argparser.createParam<std::string>(".*", "log-file",
-        "Regexp indicating which source file is allowed logging (use '.*' to allow all)", 'f', "Logging").value();
-
-    const std::string log_func = argparser.createParam<std::string>(".*", "log-func",
-        "Regexp indicating which function is allowed logging (use '.*' to allow all)", 'F', "Logging").value();
-
-    const size_t log_depth = argparser.createParam<size_t>(std::numeric_limits<size_t>::max(), "log-depth",
-        "Maximum stack depth above which logging is not allowed (the larger, the more is displayed)", 'D', "Logging").value();
-
-
-    clutchlog_config(); // common config
-    auto& log = clutchlog::logger();
-    ASSERT(log.levels().contains(log_level));
-    log.threshold(log_level);
-    log.depth(log_depth);
-    log.file(log_file);
-    log.func(log_func);
-    CLUTCHLOG(progress, "Set config...");
-
-
-    // Brutforce parameters
-    size_t value_size{8};
-    size_t func_len{2};
-    
-    // List of operator classes
-    std::vector<std::string> operators{"XorLeftShift", "XorRightShift", "AddShift", "Multiply"};
-
-    for (auto& comb : CombinationIterator(operators, func_len))
-    {
-        CLUTCHLOG(note, "Combination:");
-        for (auto& op : comb)
-        {
-            CLUTCHLOG(note, "  " << op);
-        }
-    }
-
-    return 0;
-}
-
-
 class CombinationIterator {
 public:
     CombinationIterator(const std::vector<std::string>& list, int size)
@@ -147,3 +84,53 @@ private:
         return false; // No more combinations
     }
 };
+
+
+int main(size_t argc, char* argv[])
+{
+    // eoParser argparser(argc, argv);
+
+    // /***** Classical arguments *****/
+
+    // const std::string log_level = argparser.createParam<std::string>("Progress", "log-level",
+    //     "Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)", 'l', "Logging").value();
+
+    // const std::string log_file = argparser.createParam<std::string>(".*", "log-file",
+    //     "Regexp indicating which source file is allowed logging (use '.*' to allow all)", 'f', "Logging").value();
+
+    // const std::string log_func = argparser.createParam<std::string>(".*", "log-func",
+    //     "Regexp indicating which function is allowed logging (use '.*' to allow all)", 'F', "Logging").value();
+
+    // const size_t log_depth = argparser.createParam<size_t>(std::numeric_limits<size_t>::max(), "log-depth",
+    //     "Maximum stack depth above which logging is not allowed (the larger, the more is displayed)", 'D', "Logging").value();
+
+
+    // clutchlog_config(); // common config
+    // auto& log = clutchlog::logger();
+    // ASSERT(log.levels().contains(log_level));
+    // log.threshold(log_level);
+    // log.depth(log_depth);
+    // log.file(log_file);
+    // log.func(log_func);
+    // CLUTCHLOG(progress, "Set config...");
+
+
+    // // Brutforce parameters
+    // size_t value_size{8};
+    // size_t func_len{2};
+    
+    // // List of operator classes
+    // std::vector<std::string> operators{"XorLeftShift", "XorRightShift", "AddShift", "Multiply"};
+
+    // for (auto& comb : CombinationIterator(operators, func_len))
+    // {
+    //     CLUTCHLOG(note, "Combination:");
+    //     for (auto& op : comb)
+    //     {
+    //         CLUTCHLOG(note, "  " << op);
+    //     }
+    // }
+
+    return 0;
+}
+
