@@ -45,14 +45,15 @@ int main()
     // Print the string representation of the hash function
     std::cout << hashFunc.to_string() << std::endl;
 
-    StrictAvalancheTest<myuint> strict_test{hashFunc};
+    FullAvalancheTest<myuint> full_test{value_size};
+    full_test.set_hash_function(hashFunc);
     CLUTCHLOG(progress, "Run StrictAvalancheTest incrementaly");
     // size_t const step_size {10000};
     // for (size_t iteration = step_size; iteration <= 1000000000UL; iteration += step_size)
     // {
     //     CLUTCHLOG(note, "\t" << iteration << " iterations:\t" << strict_test.run(step_size));
     // }
-    strict_test.run_exact_test();
+    std::cout << "Test completed " << full_test() << std::endl;
 
     return 0;
 }

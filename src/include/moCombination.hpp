@@ -96,39 +96,37 @@ class moCombination : public eoInt<FitT>
             (*this)[index] = value;
         }
 
-        /** Accessor to the sequence. */ // FIXME remove
-        // ContainerType& get() {
-        //     return *this;
-        // }
-
-        // /** Accessor to an item of the sequence. */
-        // AtomType& at(size_t index) {
-        //     return _combination.at(index);
-        // }
-
-        // /** Accessor to an item of the sequence. */
-        // AtomType& operator[](size_t index) {
-        //     return _combination[index];
-        // }
-
-        // /** The current size of the sequence. */
-        // size_t size() const {
-        //     return _combination.size();
-        // }
-
         /** The size of the possible indices. */
         size_t nb_options() const {
             return _nb_options;
         }
 
-        /** Fancy print. */
+        /** Serialize */
         virtual void printOn(std::ostream& out) const override {
             assert(_is_init);
-            EO<FitT>::printOn(out); // Fitness.
-            out << this->size();
-            for(const auto i : *this) {
-                out << " " << i;
-            }
+            eoVector<FitT,AtomType>::printOn(out);
+            out << " " << this->nb_options();
+        }
+
+        /** Deserialize */
+        virtual void readFrom(std::istream& in) override {
+            eoVector<FitT,AtomType> vec; // Fitness & vector
+            in >> vec;
+            this->clear();
+            this->reserve(vec.size());
+            std::copy(std::begin(vec), std::end(vec), std::back_inserter(*this));
+            this->fitness(vec.fitness());
+
+            size_t nbo;
+            in >> nbo;
+            this->_nb_options = nbo;
+
+            #ifndef NDEBUG
+                for(auto i : *this) {
+                    assert(0 <= i and i < _nb_options);
+                }
+                this->_is_init = true;
+            #endif
         }
 
         //! Class name for state management.

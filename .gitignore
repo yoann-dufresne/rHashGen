@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+
 .Rproj.user
 
 # Rproj and Maceries
@@ -37,5 +38,8 @@
 *.Rproj*
 **/.Rproj*
 
-# build
-build
+
+# dev environment
+.vscode
+build/
+bin/
