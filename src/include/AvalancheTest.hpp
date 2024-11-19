@@ -1,5 +1,6 @@
 #include <random>
 #include "HashFunction.hpp"
+#include <array>
 
 #ifndef AVALANCHE_HPP
 #define AVALANCHE_HPP
