@@ -1,0 +1,8 @@
+# Number of hash function in the file
+1
+
+# Description of a hash function. 1 per line formated as follow
+# num_bits num_operators operator1 param1 [... operatorN paramN]
+8 3 XSR 3 MUL 47 XSR 2
+
+# Empty and #-started lines are skipped

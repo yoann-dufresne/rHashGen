@@ -21,12 +21,29 @@ int main()
     auto& log = clutchlog::logger();
     log.threshold("XDebug");
 
-    // The size of the values to manipulate is 57 bits.
-    size_t value_size{32};
+    // Max size will be 63 bits (1 more bit needed for mult).
     using myuint = uint64_t;
+    
 
-    CLUTCHLOG(progress, "Try HashFunc");
+    CLUTCHLOG(progress, "Load the hash function from file");
+    std::string hash_file {"data/hash_loading.txt"};
+    // Open the file containing the hash functions that we want to test
+    std::ifstream file(hash_file);
+    if (!file.is_open())
+    {
+        CLUTCHLOG(critical, "Could not open the file " << hash_file);
+        return 1;
+    }
+
+    // Read the number of hash functions that are present in the file
+    std::string line{};
+    while (line.size() == 0 or line[0] == '#')
+    {
+        std::getline(file, line);
+    }
+
     // Create an instance of HashFunction with a value size of 64 bits
+    size_t value_size{32};
     HashFunction<myuint> hashFunc(value_size, "hash");
 
     // Add shift operators
