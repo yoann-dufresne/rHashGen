@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
+#include <eo>
 
 #include "AvalancheTest.hpp"
 #include "HashFunction.hpp"
@@ -14,8 +15,27 @@
 #include "log.h"
 
 
-int main()
+int main(int argc, char* argv[])
 {
+    // --- Argument parser ---
+
+    eoParser argparser(argc, argv);
+
+    const std::string hashfile = argparser.createParam<std::string>("hash_functions.txt", "hash-file",
+        "Path to the file containing the hash functions to test", 'f', "IO", true).value();
+    const std::string outfile = argparser.createParam<std::string>("", "outfile",
+        "File where the matricies will be outputed", 'o', "IO").value();
+
+    const size_t nb_tests = argparser.createParam<size_t>(0, "num-tests",
+        "The number of tests to perform on the hash functions. If 0, perform a complete avalanche test",
+        'n', "sampling").value();
+
+    make_help(argparser);
+
+    std::cout << "Hash functions file: " << hashfile << std::endl;
+    std::cout << "Output file: " << outfile << std::endl;
+
+
     CLUTCHLOG(progress, "Set config");
     clutchlog_config(); // common config
     auto& log = clutchlog::logger();
@@ -27,12 +47,11 @@ int main()
     // --- Preparation to file reading ---
 
     CLUTCHLOG(progress, "Open hash functions file");
-    std::string hash_file {"../data/hash_loading.txt"};
     // Open the file containing the hash functions that we want to test
-    std::ifstream file(hash_file);
+    std::ifstream file(hashfile);
     if (!file.is_open())
     {
-        CLUTCHLOG(critical, "Could not open the file " << hash_file);
+        CLUTCHLOG(critical, "Could not open the file " << hashfile);
         return 1;
     }
 
@@ -46,7 +65,7 @@ int main()
     size_t num_functions {std::stoul(line)};
     if (num_functions == 0)
     {
-        CLUTCHLOG(critical, "No hash function to test in the file " << hash_file);
+        CLUTCHLOG(critical, "No hash function to test in the file " << hashfile);
         return 1;
     }
     CLUTCHLOG(note, num_functions << " hash functions will be tested");
@@ -77,9 +96,8 @@ int main()
             return 1;
         }
 
-        // Create an instance of HashFunction with the number of bits
+        // --- Create the function ---
         HashFunction<myuint> hashFunc(num_bits, "hash");
-        FullAvalancheTest<myuint> full_test{num_bits};
 
         // Read and add the operators to the hash function
         for (size_t op_idx{0} ; op_idx<num_operators ; op_idx++)
@@ -119,12 +137,32 @@ int main()
         // Print the string representation of the hash function
         std::cout << hashFunc.to_string() << std::endl;
 
-        // Run the full avalanche test
-        full_test.set_hash_function(hashFunc);
-        std::cout << "Test completed " << full_test() << std::endl;
+        // --- Avalanche test ---
+        std::unique_ptr<AvalancheTest<myuint>> test;
+        if (nb_tests == 0)
+        {
+            CLUTCHLOG(note, "Full avalanche test");
+            test = std::make_unique<FullAvalancheTest<myuint>>(num_bits);
+        }
+        else
+        {
+            CLUTCHLOG(note, "Sampling avalanche test (" << nb_tests << " tests)");
+            test = std::make_unique<SamplingAvalancheTest<myuint>>(num_bits, nb_tests);
+        }
+        test->set_hash_function(hashFunc);
+        auto result = (*test)();
+        CLUTCHLOG(progress, "Hash function " << idx << " - Avalanche test (sampling: " << nb_tests << "): " << result);
 
-        // Print the matrix of the test
-        full_test.print_matrix(std::cout);
+        // --- Output the matrix ---
+        if (outfile.size() > 0)
+        {
+            std::ofstream out(outfile, std::ios::app);
+            test->print_matrix(out);
+        }
+        else
+        {
+            test->print_matrix(std::cout);
+        }
     }
 
     return 0;
