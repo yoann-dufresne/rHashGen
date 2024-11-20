@@ -21,69 +21,69 @@
 */
 
 
-class CombinationIterator {
-public:
-    CombinationIterator(const std::vector<std::string>& list, int size)
-        : list(list), size(size), indices(size, 0), finished(list.size() < size)
-    {}
+// class CombinationIterator {
+// public:
+//     CombinationIterator(const std::vector<std::string>& list, int size)
+//         : list(list), size(size), indices(size, 0), finished(list.size() < size)
+//     {}
 
-    // Begin iterator
-    CombinationIterator begin() {
-        return *this;
-    }
+//     // Begin iterator
+//     CombinationIterator begin() {
+//         return *this;
+//     }
 
-    // End iterator
-    CombinationIterator end() {
-        CombinationIterator endIterator = *this;
-        endIterator.finished = true;
-        return endIterator;
-    }
+//     // End iterator
+//     CombinationIterator end() {
+//         CombinationIterator endIterator = *this;
+//         endIterator.finished = true;
+//         return endIterator;
+//     }
 
-    // Move to the next combination
-    CombinationIterator& operator++() {
-        if (!advance()) {
-            finished = true;
-        }
-        return *this;
-    }
+//     // Move to the next combination
+//     CombinationIterator& operator++() {
+//         if (!advance()) {
+//             finished = true;
+//         }
+//         return *this;
+//     }
 
-    // Compare two iterators
-    bool operator!=(const CombinationIterator& other) const {
-        return finished != other.finished;
-    }
+//     // Compare two iterators
+//     bool operator!=(const CombinationIterator& other) const {
+//         return finished != other.finished;
+//     }
 
-    // Access the current combination
-    std::vector<std::string> operator*() const {
-        std::vector<std::string> combination;
-        for (int idx : indices) {
-            combination.push_back(list[idx]);
-        }
-        return combination;
-    }
+//     // Access the current combination
+//     std::vector<std::string> operator*() const {
+//         std::vector<std::string> combination;
+//         for (int idx : indices) {
+//             combination.push_back(list[idx]);
+//         }
+//         return combination;
+//     }
 
-private:
-    const std::vector<std::string>& list; // List of elements
-    int size;                             // Combination size
-    std::vector<int> indices;             // Current indices
-    bool finished;                        // Indicates if all combinations have been generated
+// private:
+//     const std::vector<std::string>& list; // List of elements
+//     int size;                             // Combination size
+//     std::vector<int> indices;             // Current indices
+//     bool finished;                        // Indicates if all combinations have been generated
 
-    // Advance to the next combination
-    bool advance() {
-        int total = list.size();
+//     // Advance to the next combination
+//     bool advance() {
+//         int total = list.size();
 
-        for (int i = size - 1; i >= 0; --i) {
-            if (indices[i] < total - 1) {
-                ++indices[i];
-                for (int j = i + 1; j < size; ++j) {
-                    indices[j] = 0;
-                }
-                return true;
-            }
-        }
+//         for (int i = size - 1; i >= 0; --i) {
+//             if (indices[i] < total - 1) {
+//                 ++indices[i];
+//                 for (int j = i + 1; j < size; ++j) {
+//                     indices[j] = 0;
+//                 }
+//                 return true;
+//             }
+//         }
 
-        return false; // No more combinations
-    }
-};
+//         return false; // No more combinations
+//     }
+// };
 
 
 int main(size_t argc, char* argv[])
