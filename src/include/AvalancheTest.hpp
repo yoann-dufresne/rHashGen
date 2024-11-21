@@ -1,6 +1,7 @@
 #include <random>
 #include "HashFunction.hpp"
 #include <array>
+#include <cmath>
 
 #ifndef AVALANCHE_HPP
 #define AVALANCHE_HPP
@@ -30,7 +31,7 @@ public:
         m_value_size(value_size),
         m_gen(rd()),
         m_dis(0, (static_cast<size_t>(1) << value_size) - 1),
-        default_nb_tests(std::min(nb_tests, static_cast<size_t>(std::numeric_limits<myuint>::max())+1)),
+        default_nb_tests(nb_tests),
         m_hash_function_ptr(nullptr),
         m_total_test(0)
     { }
@@ -81,6 +82,18 @@ public:
 
         // Return the percentage of bits that changed
         return sqrt(mean);
+    }
+
+    void print_matrix(std::ostream& os)
+    {
+        for (size_t i{0} ; i<m_value_size ; i++)
+        {
+            for (size_t j{0} ; j<m_value_size ; j++)
+            {
+                os << m_diff_matrix[i][j] << "\t";
+            }
+            os << std::endl;
+        }
     }
 };
 
@@ -133,7 +146,7 @@ public:
             }
 
             // Stop when we reach the maximum value
-            if (val == std::numeric_limits<myuint>::max())
+            if (val == std::numeric_limits<myuint>::max() or std::log2(val) >= this->m_value_size)
                 break;
         }
 
@@ -155,7 +168,9 @@ public:
      */
     SamplingAvalancheTest(const size_t value_size, const size_t nb_tests = 0) :
         AvalancheTest<myuint>(value_size, nb_tests)
-    { }
+    {
+        std::cout << "Construction " << nb_tests << " " << this->default_nb_tests << std::endl;
+    }
 
     /** Run the avalanche test over all the integers of the universe
      *
@@ -166,6 +181,7 @@ public:
     {
         assert(this->m_hash_function_ptr != nullptr);
 
+        std::cout << "default_nb_tests: " << this->default_nb_tests << std::endl;
         if(nb_tests == 0) {nb_tests = this->default_nb_tests;}
 
         for (size_t i{0} ; i<nb_tests ; i++)
