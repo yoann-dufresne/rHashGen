@@ -36,7 +36,6 @@ int main(int argc, char* argv[])
     std::cout << "Output file: " << outfile << std::endl;
 
 
-    CLUTCHLOG(progress, "Set config");
     clutchlog_config(); // common config
     auto& log = clutchlog::logger();
     log.threshold("XDebug");

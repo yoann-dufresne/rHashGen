@@ -190,6 +190,24 @@ public:
         return inverted;
     }
 
+    std::string to_short() const
+    {
+        std::ostringstream ss;
+        ss << std::to_string(m_value_size) << " " << std::to_string(m_operators.size()) << " ";
+
+        for (auto const & op : m_operators)
+        {
+            // If not a masking operator
+            if (auto const* masking_ptr = dynamic_cast<const Masking<myuint>*>(op.get())) {
+                continue;
+            }
+
+            ss << op->to_short() << " ";
+        }
+        
+        return ss.str();
+    }
+
     /** Get the string representation of the hash function
      * @return The string representation of the hash function
      */

@@ -1,5 +1,7 @@
 # Number of hash function in the file
-2
+9
+
+# --- Examples ---
 
 # Description of a hash function. 1 per line formated as follow
 # num_bits num_operators operator1 param1 [... operatorN paramN]
@@ -7,3 +9,24 @@
 16 3 XSR 7 MUL 61053 XSR 9
 
 # Empty and #-started lines are skipped
+
+
+# --- 8bits 3 Operators ---
+
+# Bad score 0.662474
+8 3 XSL 2 XSR 3 ASL 1
+# 0.304274
+8 3 XSR 4 MUL 43 XSR 4
+# Best possible score 0.28054
+8 3 MUL 43 XSR 7 MUL 87
+
+
+# --- 8bits 4 Operators ---
+# 0.197373
+8 4 XSL 1 XSR 4 MUL 85 XSR 4
+# 0.178861 
+8 4 XSR 1 XSR 4 MUL 45 XSR 3
+# 0.150562
+8 4 ASL 3 XSR 4 MUL 27 XSR 4
+# Best function: 0.135644
+8 4 MUL 39 XSR 4 MUL 27 XSR 4
