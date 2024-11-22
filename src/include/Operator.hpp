@@ -5,6 +5,7 @@
 #ifndef OPERATOR_HPP
 #define OPERATOR_HPP
 
+
 template <typename myuint>
 class Operator
 {
