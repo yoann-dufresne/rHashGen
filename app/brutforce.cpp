@@ -26,7 +26,7 @@
 class CombinationIterator {
 public:
     CombinationIterator(const std::vector<std::string>& list, size_t const size)
-        : list(list), size(size), indices(size, 0), finished(list.size() < size)
+        : list(list), size(size), indices(size, 0), finished(false)
     {}
 
     // Begin iterator
@@ -241,30 +241,50 @@ int main(int argc, char* argv[])
     double best_score = 10000000;
 
     CombinationIterator c_iter(operators, func_len);
+    uint64_t idx=1;
+    uint64_t const total = std::pow(operators.size(), func_len);
     for (std::vector<std::string> operators : c_iter)
     {
-        // Compute all the operator combinations
-        ParamEnumerator p_iter(value_size, operators);
-        for (std::vector<uint64_t> parameters : p_iter)
+        CLUTCHLOG(progress, "" << idx << "/" << total);
+
+        // Skip if there are two consecutive mutliply operators
+        bool to_skip = false;
+        for (size_t i = 1; i < operators.size(); ++i)
         {
-            double score = test_hash_function(value_size, operators, parameters);
-            if (score < best_score)
+            if (operators[i] == "Multiply" && operators[i - 1] == "Multiply")
             {
-                best_score = score;
-                best_operators = operators;
-                best_parameters = parameters;
-
-                std::stringstream ss;
-                ss << best_score << " ";
-                for (size_t i = 0; i < best_operators.size(); ++i)
-                {
-                    ss << best_operators[i] << " " << best_parameters[i] << " ";
-                }
-
-                CLUTCHLOG(note, "New best score: " << ss.str());
-
+                to_skip = true;
+                break;
             }
         }
+
+        if (not to_skip)
+        {
+            // Compute all the operator combinations
+            ParamEnumerator p_iter(value_size, operators);
+            for (std::vector<uint64_t> parameters : p_iter)
+            {
+                double score = test_hash_function(value_size, operators, parameters);
+                if (score < best_score)
+                {
+                    best_score = score;
+                    best_operators = operators;
+                    best_parameters = parameters;
+
+                    std::stringstream ss;
+                    ss << best_score << " ";
+                    for (size_t i = 0; i < best_operators.size(); ++i)
+                    {
+                        ss << best_operators[i] << " " << best_parameters[i] << " ";
+                    }
+
+                    CLUTCHLOG(note, "New best score: " << ss.str());
+
+                }
+            }
+        }
+
+        idx += 1;
     }
 
     return 0;
