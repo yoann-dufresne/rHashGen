@@ -1,5 +1,5 @@
 # Number of hash function in the file
-9
+12
 
 # --- Examples ---
 
@@ -22,6 +22,7 @@
 
 
 # --- 8bits 4 Operators ---
+
 # 0.197373
 8 4 XSL 1 XSR 4 MUL 85 XSR 4
 # 0.178861 
@@ -30,3 +31,17 @@
 8 4 ASL 3 XSR 4 MUL 27 XSR 4
 # Best function: 0.135644
 8 4 MUL 39 XSR 4 MUL 27 XSR 4
+
+
+# --- 8bits 5 Operators ---
+
+# 0.13486
+8 5 XSL 1 XSR 2 ASL 4 XSR 6 MUL 135
+# 0.0572857
+8 5 XSR 1 MUL 15 XSR 3 MUL 221 XSR 4
+
+
+# --- 8bits 6 Operators ---
+
+# 0.0928976 
+8 6 XSL 1 XSL 2 XSR 7 MUL 167 XSR 6 MUL 213

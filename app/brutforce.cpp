@@ -227,6 +227,8 @@ int main(int argc, char* argv[])
 
     size_t const func_len {argparser.createParam<size_t>(2, "num-ops", "Number of operators for the hash function", 'n', "Hash function").value()};
 
+    size_t const skipt_to {argparser.createParam<size_t>(0, "skip-to", "Skip the first combinations to start the brutforce later. This option is made to allow save and restart.").value()};
+
 
     clutchlog_config(); // common config
     auto& log = clutchlog::logger();
@@ -240,11 +242,19 @@ int main(int argc, char* argv[])
     std::vector<uint64_t> best_parameters;
     double best_score = 10000000;
 
+    if (skipt_to > 0)
+        CLUTCHLOG(note, "Skipping the first " << skipt_to << " operator combinations");
+
     CombinationIterator c_iter(operators, func_len);
     uint64_t idx=1;
     uint64_t const total = std::pow(operators.size(), func_len);
     for (std::vector<std::string> operators : c_iter)
     {
+        if (idx < skipt_to) {
+            idx++;
+            continue;
+        }
+
         CLUTCHLOG(progress, "" << idx << "/" << total);
 
         // Skip if there are two consecutive mutliply operators
