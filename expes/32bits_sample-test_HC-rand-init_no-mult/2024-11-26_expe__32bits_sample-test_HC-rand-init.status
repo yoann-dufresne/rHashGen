@@ -31,5 +31,5 @@
 # --shift-step=1                           # -i : Increment step for number of shifts
 --mult-min=3                             # -m : Smallest multiplier
 --mult-max=4294967295                           # -M : Largest multiplier
-# --mult-step=2                            # -u : Increment step for multipliers (note: only odd multipliers will be allowed)
-# --operators=XorLeftShift,XorRightShift,AddShift,Multiply # -o : Operators allowed in the domain, as a comma-separated list
+--mult-step=100                            # -u : Increment step for multipliers (note: only odd multipliers will be allowed)
+--operators=XorLeftShift,XorRightShift,AddShift # -o : Operators allowed in the domain, as a comma-separated list
