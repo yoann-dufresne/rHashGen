@@ -37,9 +37,9 @@ class moCombinationNeighbor : public moIndexNeighbor<EOT,Fitness>
         /** Default constructor.
          */
         moCombinationNeighbor() :
-            moIndexNeighbor<EOT,Fitness>(),
+            moIndexNeighbor<EOT,Fitness>()
             #ifndef NDEBUG
-                _is_init(false)
+                , _is_init(false)
             #endif
         { }
 
@@ -90,7 +90,9 @@ class moCombinationNeighbor : public moIndexNeighbor<EOT,Fitness>
         {
             _index = index;
             _value = value;
-            _is_init = true;
+            #ifndef NDEBUG
+                _is_init = true;
+            #endif
         }
 
         /** Set the considered move.

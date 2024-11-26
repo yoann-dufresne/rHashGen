@@ -44,9 +44,11 @@ class moCombination : public eoInt<FitT>
         {
             CLUTCHLOG(debug, "instantiated with combination of size " << this->size() << " and " << _nb_options << " options");
             assert(_nb_options >= 2); // At least 2 options.
-            for(const auto i : *this) {
-                assert(i < _nb_options);
-            }
+            #ifndef NDEBUG
+                for(const auto i : *this) {
+                    assert(i < _nb_options);
+                }
+            #endif
         }
 
         /** Constructor with sizes.
