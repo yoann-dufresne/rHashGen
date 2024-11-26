@@ -168,9 +168,7 @@ public:
      */
     SamplingAvalancheTest(const size_t value_size, const size_t nb_tests = 0) :
         AvalancheTest<myuint>(value_size, nb_tests)
-    {
-        std::cout << "Construction " << nb_tests << " " << this->default_nb_tests << std::endl;
-    }
+    { }
 
     /** Run the avalanche test over all the integers of the universe
      *
@@ -181,7 +179,6 @@ public:
     {
         assert(this->m_hash_function_ptr != nullptr);
 
-        std::cout << "default_nb_tests: " << this->default_nb_tests << std::endl;
         if(nb_tests == 0) {nb_tests = this->default_nb_tests;}
 
         for (size_t i{0} ; i<nb_tests ; i++)
