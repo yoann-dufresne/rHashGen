@@ -250,14 +250,14 @@ int main(int argc, char* argv[])
 
     /***** Search domain arguments *****/
 
-    const size_t value_size = argparser.createParam<size_t>(31, "value-size",
+    const size_t value_size = argparser.createParam<size_t>(32, "value-size",
         "Value size (in bits)", 'v', "Search domain").value();
     ASSERT(value_size < sizeof(myuint)*CHAR_BIT);
 
     const size_t func_len = argparser.createParam<size_t>(3, "func-len",
         "Number of operations in the hash function", 'n', "Search domain").value();
 
-    const size_t shift_min = argparser.createParam<size_t>(2, "shift-min",
+    const size_t shift_min = argparser.createParam<size_t>(1, "shift-min",
         "Minimum number of shifts", 't', "Search domain").value();
     const size_t shift_max = argparser.createParam<size_t>(30, "shift-max",
         "Maximum number of shifts", 'T', "Search domain").value();
@@ -311,8 +311,8 @@ int main(int argc, char* argv[])
 
     /***** Objective Functions arguments *****/
 
-    // const size_t nb_tests = argparser.createParam<size_t>(1000, "nb-tests",
-        // "Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)", 'x', "Objective Functions").value();
+    const size_t nb_tests = argparser.createParam<size_t>(1000, "nb-tests",
+        "Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)", 'x', "Objective Functions").value();
 
 
     // make_verbose(argparser);
@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
     CLUTCHLOGD(info, "init-sol   = " << (init_sol? "ON" : "OFF"), 1);
     CLUTCHLOGD(info, "algo       = " << algo, 1);
     CLUTCHLOGD(info, "pop-size   = " << pop_size, 1);
-    // CLUTCHLOGD(info, "nb-tests   = " << nb_tests, 1);
+    CLUTCHLOGD(info, "nb-tests   = " << nb_tests, 1);
 
     if(shift_min == 0) {
         EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set `--shift-min` to zero.");
@@ -370,8 +370,13 @@ int main(int argc, char* argv[])
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
 
-    // SamplingAvalancheTest<myuint> test(value_size, /*nb_tests*/nb_tests);
-    FullAvalancheTest<myuint> test(value_size);
+    std::unique_ptr< AvalancheTest<myuint> > ptest;
+
+    if(nb_tests == 0) {
+        ptest = std::make_unique< FullAvalancheTest<myuint> >(value_size);
+    } else {
+        ptest = std::make_unique< SamplingAvalancheTest<myuint> >(value_size, /*nb_tests*/nb_tests);
+    }
 
     if( not parametrize ) {
         if( algo == "HC" or algo == "SA" ) {
@@ -379,7 +384,7 @@ int main(int argc, char* argv[])
             using Nb = moCombinationNeighbor<Combi>;
             using NbHood = moCombinationNeighborhood<Combi>;
 
-            combi::EvalFull<myuint, Combi> feval(value_size, forge, test);
+            combi::EvalFull<myuint, Combi> feval(value_size, forge, *ptest);
             combi::EvalTest<myuint, Combi> peval(feval);
 
             NbHood neighborhood;
@@ -446,7 +451,7 @@ int main(int argc, char* argv[])
 
             using ReVec = moeoRealVector<combi::QualityAndRuntime>;
 
-            combi::EvalMO<myuint,CombiMO> eval(value_size, forge, test);
+            combi::EvalMO<myuint,CombiMO> eval(value_size, forge, *ptest);
             eoPopLoopEval<CombiMO> popEval(eval);
 
             // Crossover
@@ -507,7 +512,7 @@ int main(int argc, char* argv[])
             edoNormalAdaptive<R> gaussian(dim);
 
             eoState state;
-            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators, test);
+            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators, *ptest);
             auto& eval     = state.pack< eoEvalCounterThrowException<R> >(obj_func, max_eval);
             auto& pop_eval = state.pack< eoPopLoopEval<R> >(eval);
 
