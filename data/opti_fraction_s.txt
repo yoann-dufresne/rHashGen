@@ -1,0 +1,72 @@
+rHashGen:
+    forward: |4
+        template <typename myuint>
+        myuint hash𓐅9𓉘r3𐙤x5𐙤m8𐙤r3𐙤a1𐙤m8𐙤r4𐙤x3𐙤m8𓉝(myuint val)
+        {
+          val ^= val >> 3;
+          val *= 5;
+          val &= 0xff;
+          val ^= val >> 3;
+          val += val << 1;
+          val &= 0xff;
+          val ^= val >> 4;
+          val *= 3;
+          val &= 0xff;
+          return val;
+        }
+    reverse: |4
+        template <typename myuint>
+        myuint inverted_hash𓐅9𓉘r3𐙤x5𐙤m8𐙤r3𐙤a1𐙤m8𐙤r4𐙤x3𐙤m8𓉝(myuint val)
+        {
+          val *= 171;
+          val &= 0xff;
+          val ^= val >> 4;
+          val *= 171;
+          val &= 0xff;
+          val ^= val >> 3;
+          val ^= val >> 6;
+          val *= 205;
+          val &= 0xff;
+          val ^= val >> 3;
+          val ^= val >> 6;
+          return val;
+        }
+    solution: "0.0968904  6 7 20 7 2 10 19  21"
+    quality: 0.0968904
+
+
+### GENERAL ########################################################################
+# --help=0                                 # -h : Prints this message
+# --stopOnUnknownParam=1                   # Stop if unkown param entered
+
+### ALGORITHM ######################################################################
+--algo=HC                                # -a : Search metaheuristic (CMAES:CMA-ES [mono-objective, parametrize], HC:Hill-Climbing [mono-objective, fixed-size-combination], NSGA2:NSGAII [bi-objective, fixed-size-combination], SA:Simulated-Annealing [mono-objective, fixed-size-combination], )
+# --init-sol=0                             # -I : Read initial solution from standard input
+# --parametrize=0                          # -P : Only tune the parameters and do not change the operators.This will interpret --operators=<SEQ> as a sequence of operators to be parametrized.
+# --pop-size=100                           # -p : Population size for evolutionary algorithms
+
+### LOGGING ########################################################################
+# --log-level=Progress                     # -l : Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)
+# --log-file=.*                            # -f : Regexp indicating which source file is allowed logging (use '.*' to allow all)
+# --log-func=.*                            # -F : Regexp indicating which function is allowed logging (use '.*' to allow all)
+# --log-depth=18446744073709551615         # -D : Maximum stack depth above which logging is not allowed (the larger, the more is displayed)
+
+### OBJECTIVE FUNCTIONS ############################################################
+# --nb-tests=1000                          # -x : Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)
+
+### PARAMETERS #####################################################################
+# --seed=0                                 # -s : Seed of the pseudo-random generator (0 = use number of seconds since The Epoch)
+
+### PERSISTENCE ####################################################################
+# --status=./search.status                 # Status file
+
+### SEARCH DOMAIN ##################################################################
+--value-size=8                           # -v : Value size (in bits)
+--func-len=6                             # -n : Number of operations in the hash function
+--shift-min=1                            # -t : Minimum number of shifts
+--shift-max=7                            # -T : Maximum number of shifts
+# --shift-step=1                           # -i : Increment step for number of shifts
+--mult-min=1                             # -m : Smallest multiplier
+--mult-max=255                           # -M : Largest multiplier
+# --mult-step=2                            # -u : Increment step for multipliers (note: only odd multipliers will be allowed)
+# --operators=XorLeftShift,XorRightShift,AddShift,Multiply # -o : Operators allowed in the domain, as a comma-separated list

@@ -229,6 +229,7 @@ int main(int argc, char* argv[])
 
     size_t const skipt_to {argparser.createParam<size_t>(0, "skip-to", "Skip the first combinations to start the brutforce later. This option is made to allow save and restart.").value()};
 
+    make_help(argparser);
 
     clutchlog_config(); // common config
     auto& log = clutchlog::logger();
