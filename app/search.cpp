@@ -27,7 +27,7 @@
 #include "EvalFunc.hpp"
 #include "log.h"
 
-using myuint = uint32_t;
+using myuint = uint64_t;
 
 using Min = eoMinimizingFitness;
 using Combi = moCombination<Min>;
