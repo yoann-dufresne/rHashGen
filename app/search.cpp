@@ -311,8 +311,8 @@ int main(int argc, char* argv[])
 
     /***** Objective Functions arguments *****/
 
-    const size_t nb_tests = argparser.createParam<size_t>(1000, "nb-tests",
-        "Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)", 'x', "Objective Functions").value();
+    // const size_t nb_tests = argparser.createParam<size_t>(1000, "nb-tests",
+        // "Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)", 'x', "Objective Functions").value();
 
 
     // make_verbose(argparser);
@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
     CLUTCHLOGD(info, "init-sol   = " << (init_sol? "ON" : "OFF"), 1);
     CLUTCHLOGD(info, "algo       = " << algo, 1);
     CLUTCHLOGD(info, "pop-size   = " << pop_size, 1);
-    CLUTCHLOGD(info, "nb-tests   = " << nb_tests, 1);
+    // CLUTCHLOGD(info, "nb-tests   = " << nb_tests, 1);
 
     if(shift_min == 0) {
         EXIT_ON_ERROR(InconsistentDomain, "It makes no sense to set `--shift-min` to zero.");
@@ -370,7 +370,8 @@ int main(int argc, char* argv[])
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
 
-    SamplingAvalancheTest<myuint> test(value_size, /*nb_tests*/nb_tests);
+    // SamplingAvalancheTest<myuint> test(value_size, /*nb_tests*/nb_tests);
+    FullAvalancheTest<myuint> test(value_size);
 
     if( not parametrize ) {
         if( algo == "HC" or algo == "SA" ) {
