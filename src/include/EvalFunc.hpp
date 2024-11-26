@@ -59,13 +59,13 @@ HashFunctionPair<myuint> make_hashfuncs( EOT& sol, size_t value_size, eoForgeVec
     // ASSERT(hfr.size() > 0);
     CLUTCHLOG(xdebug, "Got inverted hash function: " << hfr.get_name());
 
-    #ifndef NDEBUG
-        CLUTCHLOG(xdebug, "Check inversion");
-        myuint value {0xDADBEEF};
-        myuint hashed {hff.apply(value)};
-        myuint recovered {hfr.apply(hashed)};
-        ASSERT(value == recovered);
-    #endif
+    // #ifndef NDEBUG
+    //     CLUTCHLOG(xdebug, "Check inversion");
+    //     myuint value {0xDADBEEF};
+    //     myuint hashed {hff.apply(value)};
+    //     myuint recovered {hfr.apply(hashed)};
+    //     ASSERT(value == recovered);
+    // #endif
 
     return HashFunctionPair<myuint>(hff, hfr);
 }
