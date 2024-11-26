@@ -5,9 +5,13 @@ import seaborn as sb
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv(sys.stdin)
+df = pd.DataFrame([float(i) for i in sys.stdin])
 
 print(df)
+
+imin = df.idxmin()
+
+print("Minimum at seed=", imin+1)
 
 sb.displot( data = df , kde = True, rug = True)
 
@@ -15,3 +19,4 @@ plt.title(f"Full avalanche test qualities distribution for {df.size} runs")
 plt.xlabel("Quality")
 
 plt.show()
+
