@@ -13,14 +13,14 @@ SECONDS=0 # Bash' env
 s=0
 while [[ 1 ]] ; do
     s=$((s+1))
-    printf "Run $s..."
-    cmd="../../release/search @2024-11-26_expe__8bits_full-test_HC-rand-init.status --seed=${s} > ${resdir}/run_s${s}.yaml 2>${resdir}/run_s${s}.log"
+    cmd="../../release/search @2024-11-26_expe__8bits_full-test_HC-rand-init.status --seed=${s}"
+    printf "Run $s...\n"
     echo "$cmd"
-    $cmd
+    $cmd > ${resdir}/run_s${s}.yaml 2>${resdir}/run_s${s}.log
     if [[ $? > 0 ]]; then
         printf "Run $s... FAIL"
     else
-        printf " OK"
+        printf "Run $s...   OK"
     fi
     duration=$SECONDS
     printf " at $((duration/60)) minutes $((duration % 60)) seconds\n"
