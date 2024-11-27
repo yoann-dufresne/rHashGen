@@ -32,6 +32,20 @@ uint64_t hash_best_known(uint64_t key)
 }
 
 
+uint64_t hash_search(uint64_t val)
+{
+    val += val << 6;
+    val &= 0xffffffff;
+    val ^= val >> 18;
+    val += val << 3;
+    val &= 0xffffffff;
+    val ^= val >> 8;
+    val += val << 13;
+    val &= 0xffffffff;
+    return val;
+}
+
+
 
 
 
@@ -52,13 +66,13 @@ int main()
     // Compte the matrix for the cascading criterion
     for (uint64_t val = 0; val < 0xFFFFFFFF; val++)
     {
-        uint64_t hash = hash_best_known(val);
+        uint64_t hash = hash_search(val);
 
         // Mutate the i value
         for (int mut_idx = 0; mut_idx < 32; mut_idx++)
         {
             uint64_t mut_val = val ^ (1 << mut_idx);
-            uint64_t mut_hash = hash_best_known(mut_val); 
+            uint64_t mut_hash = hash_search(mut_val); 
             
             // Compute the difference
             uint64_t diff = hash ^ mut_hash;
