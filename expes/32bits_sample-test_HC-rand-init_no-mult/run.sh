@@ -13,10 +13,10 @@ SECONDS=0 # Bash' env
 s=0
 while [[ 1 ]] ; do
     s=$((s+1))
-    cmd="../../release/search @2024-11-26_expe__32bits_sample-test_HC-rand-init.status --seed=${s} --nb-tests=$(((2**32-1)/1000)) > ${resdir}/run_s${s}.yaml 2>${resdir}/run_s${s}.log"
+    cmd="../../release/search @2024-11-26_expe__32bits_sample-test_HC-rand-init.status --seed=${s} --nb-tests=$(((2**32-1)/1000))"
     printf "Run $s..."
     echo "$cmd"
-    $cmd
+    $cmd > ${resdir}/run_s${s}.yaml 2>${resdir}/run_s${s}.log
     if [[ $? > 0 ]]; then
         printf "Run $s... FAIL"
     else
