@@ -27,7 +27,7 @@
 #include "EvalFunc.hpp"
 #include "log.h"
 
-using myuint = uint32_t;
+using myuint = uint64_t;
 
 using Min = eoMinimizingFitness;
 using Combi = moCombination<Min>;
@@ -250,14 +250,14 @@ int main(int argc, char* argv[])
 
     /***** Search domain arguments *****/
 
-    const size_t value_size = argparser.createParam<size_t>(31, "value-size",
+    const size_t value_size = argparser.createParam<size_t>(32, "value-size",
         "Value size (in bits)", 'v', "Search domain").value();
     ASSERT(value_size < sizeof(myuint)*CHAR_BIT);
 
     const size_t func_len = argparser.createParam<size_t>(3, "func-len",
         "Number of operations in the hash function", 'n', "Search domain").value();
 
-    const size_t shift_min = argparser.createParam<size_t>(2, "shift-min",
+    const size_t shift_min = argparser.createParam<size_t>(1, "shift-min",
         "Minimum number of shifts", 't', "Search domain").value();
     const size_t shift_max = argparser.createParam<size_t>(30, "shift-max",
         "Maximum number of shifts", 'T', "Search domain").value();
@@ -370,7 +370,13 @@ int main(int argc, char* argv[])
     CLUTCHLOG(progress, "Instantiate solver...");
     eo::rng.reseed(seed);
 
-    SamplingAvalancheTest<myuint> test(value_size, /*nb_tests*/nb_tests);
+    std::unique_ptr< AvalancheTest<myuint> > ptest;
+
+    if(nb_tests == 0) {
+        ptest = std::make_unique< FullAvalancheTest<myuint> >(value_size);
+    } else {
+        ptest = std::make_unique< SamplingAvalancheTest<myuint> >(value_size, /*nb_tests*/nb_tests);
+    }
 
     if( not parametrize ) {
         if( algo == "HC" or algo == "SA" ) {
@@ -378,7 +384,7 @@ int main(int argc, char* argv[])
             using Nb = moCombinationNeighbor<Combi>;
             using NbHood = moCombinationNeighborhood<Combi>;
 
-            combi::EvalFull<myuint, Combi> feval(value_size, forge, test);
+            combi::EvalFull<myuint, Combi> feval(value_size, forge, *ptest);
             combi::EvalTest<myuint, Combi> peval(feval);
 
             NbHood neighborhood;
@@ -445,7 +451,7 @@ int main(int argc, char* argv[])
 
             using ReVec = moeoRealVector<combi::QualityAndRuntime>;
 
-            combi::EvalMO<myuint,CombiMO> eval(value_size, forge, test);
+            combi::EvalMO<myuint,CombiMO> eval(value_size, forge, *ptest);
             eoPopLoopEval<CombiMO> popEval(eval);
 
             // Crossover
@@ -506,7 +512,7 @@ int main(int argc, char* argv[])
             edoNormalAdaptive<R> gaussian(dim);
 
             eoState state;
-            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators, test);
+            auto& obj_func = state.pack< param::EvalFull<myuint,R> >(value_size, operators, *ptest);
             auto& eval     = state.pack< eoEvalCounterThrowException<R> >(obj_func, max_eval);
             auto& pop_eval = state.pack< eoPopLoopEval<R> >(eval);
 

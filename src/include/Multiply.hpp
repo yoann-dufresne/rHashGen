@@ -7,6 +7,8 @@
 
 #include "Operator.hpp"
 
+#include <clutchlog/clutchlog.h>
+
 #ifndef MULTIPLY_HPP
 #define MULTIPLY_HPP
 
@@ -37,7 +39,10 @@ public:
         }
         if (a != 1)
         {
-            throw std::runtime_error("The multiplier is not invertible");
+            std::ostringstream msg;
+            msg << "The multiplier " << a << " is not invertible";
+            CLUTCHLOG(error, msg.str());
+            throw std::runtime_error(msg.str());
         }
     }
 
@@ -46,8 +51,12 @@ public:
 
     myuint get_invert_multiplier() const
     {
-        if (m_value_size >= sizeof(myuint) * 8)
-            throw std::runtime_error("Integer size is too small. Multiplication inverse impossible. 1 more bit is needed.");
+        if (m_value_size >= sizeof(myuint) * 8) {
+            std::ostringstream msg;
+            msg << "Integer size " << m_value_size << " >= sizeof(myuint)*8 = " << sizeof(myuint) * 8 << " is too small. Multiplication inverse impossible. 1 more bit is needed.";
+            CLUTCHLOG(error, msg.str());
+            throw std::runtime_error(msg.str());
+        }
         // Compute the inverse of the multiplier by using the extended euclidean algorithm (cf https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm)
         // The algorithm is modified for unsigned integers. Explanation at https://stackoverflow.com/questions/67097428
 

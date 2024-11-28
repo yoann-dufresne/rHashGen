@@ -1,0 +1,35 @@
+### GENERAL ########################################################################
+# --help=0                                 # -h : Prints this message
+# --stopOnUnknownParam=1                   # Stop if unkown param entered
+
+### ALGORITHM ######################################################################
+--algo=HC                                # -a : Search metaheuristic (CMAES:CMA-ES [mono-objective, parametrize], HC:Hill-Climbing [mono-objective, fixed-size-combination], NSGA2:NSGAII [bi-objective, fixed-size-combination], SA:Simulated-Annealing [mono-objective, fixed-size-combination], )
+# --init-sol=0                             # -I : Read initial solution from standard input
+# --parametrize=0                          # -P : Only tune the parameters and do not change the operators.This will interpret --operators=<SEQ> as a sequence of operators to be parametrized.
+# --pop-size=100                           # -p : Population size for evolutionary algorithms
+
+### LOGGING ########################################################################
+--log-level=Warning                     # -l : Maximum depth level of logging (Critical<Error<Warning<Progress<Note<Info<Debug<XDebug)
+# --log-file=.*                            # -f : Regexp indicating which source file is allowed logging (use '.*' to allow all)
+# --log-func=.*                            # -F : Regexp indicating which function is allowed logging (use '.*' to allow all)
+# --log-depth=18446744073709551615         # -D : Maximum stack depth above which logging is not allowed (the larger, the more is displayed)
+
+### OBJECTIVE FUNCTIONS ############################################################
+# --nb-tests=1000                          # -x : Number of tests performed to assess the quality (whether the hash function distributes closely related k-mers uniformly in binary space)
+
+### PARAMETERS #####################################################################
+# --seed=0                                 # -s : Seed of the pseudo-random generator (0 = use number of seconds since The Epoch)
+
+### PERSISTENCE ####################################################################
+# --status=./search.status                 # Status file
+
+### SEARCH DOMAIN ##################################################################
+--value-size=32                           # -v : Value size (in bits)
+--func-len=5                             # -n : Number of operations in the hash function
+--shift-min=1                            # -t : Minimum number of shifts
+--shift-max=31                            # -T : Maximum number of shifts
+# --shift-step=1                           # -i : Increment step for number of shifts
+--mult-min=3                             # -m : Smallest multiplier
+--mult-max=4294967295                           # -M : Largest multiplier
+--mult-step=100                            # -u : Increment step for multipliers (note: only odd multipliers will be allowed)
+--operators=XorLeftShift,XorRightShift,AddShift # -o : Operators allowed in the domain, as a comma-separated list

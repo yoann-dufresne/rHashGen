@@ -15,7 +15,11 @@ class moCombinationNeighborhood : public moNeighborhood< moCombinationNeighbor<E
         /** Shortcut for Atom’s type. */
         using AtomType = typename EOT::AtomType;
 
-        moCombinationNeighborhood() : _is_init(false) { }
+        moCombinationNeighborhood()
+        #ifndef NDEBUG
+            : _is_init(false)
+        #endif
+        { }
 
         /** Initialize the neighborhood.
          *
@@ -27,7 +31,9 @@ class moCombinationNeighborhood : public moNeighborhood< moCombinationNeighbor<E
             _j_value = 0;
             to.set(_i_index, _j_value);
             to.invalidate();
-            _is_init = true;
+            #ifndef NDEBUG
+                _is_init = true;
+            #endif
         }
 
         /** Point to the next neighbor. */
